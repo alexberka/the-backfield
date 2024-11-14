@@ -16,15 +16,6 @@ assignees: ''
 
 ---
 
----
-name: "[Entity] - [Action] Route  "
-about: API Calls for BE
-title: ''
-labels: ''
-assignees: ''
-
----
-
 ### **Description**
 Implement the [Action] route for the [Entity] entity.
 - **Entity**:
