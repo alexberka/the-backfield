@@ -19,6 +19,21 @@ public class TheBackfieldDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<GameStat>()
+            .HasOne<Team>()
+            .WithMany()
+            .HasForeignKey(gs => gs.TeamId);
+
+        modelBuilder.Entity<GameStat>()
+            .HasOne<Game>()
+            .WithMany()
+            .HasForeignKey(gs => gs.GameId);
+
+        modelBuilder.Entity<GameStat>()
+            .HasOne<Player>()
+            .WithMany()
+            .HasForeignKey(gs => gs.PlayerId);
+
+        modelBuilder.Entity<Position>().HasData(PositionData.Positions);
     }
 }
