@@ -1,4 +1,3 @@
-using TheBackfield.Models;
 namespace TheBackfield.DTOs;
 
 public class TeamSubmitDTO

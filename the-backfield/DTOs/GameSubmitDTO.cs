@@ -1,7 +1,6 @@
-using TheBackfield.Models;
 namespace TheBackfield.DTOs;
 
-public class Game
+public class GameSubmitDTO
 {
     public int Id { get; set; }
     public int HomeTeamId { get; set; }
