@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-builder.Services.AddNpgsql<TheBackfieldDbContext>(builder.Configuration["TheBackfieldConnectionString"]);
+builder.Services.AddNpgsql<TheBackfieldDbContext>(builder.Configuration["TheBackfieldDbConnectionString"]);
 
 builder.Services.Configure<JsonOptions>(options =>
 {
