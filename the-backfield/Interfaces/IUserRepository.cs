@@ -5,7 +5,7 @@ namespace TheBackfield.Interfaces;
 
 public interface IUserRepository
 {
-    Task<int> VerifySessionKeyAsync(string sessionKey);
-    Task<User?> GetUserDataAsync(string uid);
+    Task<User?> GetUserBySessionKeyAsync(string sessionKey);
+    Task<User?> GetUserByUidAsync(string uid);
     Task<User?> CreateUserAsync(UserSubmitDTO userSubmit);
 }

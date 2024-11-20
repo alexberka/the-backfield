@@ -20,11 +20,16 @@ public class UserService : IUserService
 
     public async Task<User?> GetUserDataAsync(string uid)
     {
-        return await _userRepository.GetUserDataAsync(uid);
+        return await _userRepository.GetUserByUidAsync(uid);
     }
-
+    /// <summary>
+    /// Returns userId if sessionKey is valid, otherwise returns 0
+    /// </summary>
+    /// <param name="sessionKey"></param>
+    /// <returns>userId as int</returns>
     public async Task<int> VerifySessionKeyAsync(string sessionKey)
     {
-        return await _userRepository.VerifySessionKeyAsync(sessionKey);
+        User? verified = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
+        return verified == null ? 0 : verified.Id;
     }
 }
