@@ -41,7 +41,7 @@ public class UserRepository : IUserRepository
         return newUser;
     }
 
-    public async Task<User?> GetUserDataAsync(string uid)
+    public async Task<User?> GetUserByUidAsync(string uid)
     {
         User? user = await _dbContext.Users.SingleOrDefaultAsync(u => u.Uid == uid);
 
@@ -56,8 +56,8 @@ public class UserRepository : IUserRepository
         return user;
     }
 
-    public Task<int> VerifySessionKeyAsync(string sessionKey)
+    public async Task<User?> GetUserBySessionKeyAsync(string sessionKey)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Users.SingleOrDefaultAsync(u => u.SessionKey == sessionKey);
     }
 }
