@@ -13,12 +13,12 @@ public class UserService : IUserService
         _userRepository = userRepository;
     }
 
-    public async Task<User> CreateUserAsync(UserSubmitDTO userSubmit)
+    public async Task<User?> CreateUserAsync(UserSubmitDTO userSubmit)
     {
         return await _userRepository.CreateUserAsync(userSubmit);
     }
 
-    public async Task<User> GetUserDataAsync(string uid)
+    public async Task<User?> GetUserDataAsync(string uid)
     {
         return await _userRepository.GetUserDataAsync(uid);
     }
