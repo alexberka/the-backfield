@@ -10,4 +10,5 @@ public interface IPlayerRepository
     Task<Player> CreatePlayerAsync(Player newPlayer);
     Task<Player?> UpdatePlayerAsync(Player updatedPlayer);
     Task<string?> DeletePlayerAsync(int playerId, int userId);
+    Task<Player> SetPlayerPositionsAsync(PlayerPositionSubmitDTO positionSubmit);
 }

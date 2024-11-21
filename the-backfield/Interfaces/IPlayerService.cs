@@ -1,5 +1,4 @@
 using TheBackfield.DTOs;
-using TheBackfield.Models;
 
 namespace TheBackfield.Interfaces;
 

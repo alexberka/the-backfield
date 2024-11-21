@@ -26,6 +26,9 @@ builder.Services.AddScoped<IGameStatRepository, GameStatRepository>();
 builder.Services.AddScoped<IPlayerService, PlayerService>();
 builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
 
+builder.Services.AddScoped<IPositionService, PositionService>();
+builder.Services.AddScoped<IPositionRepository, PositionRepository>();
+
 builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 

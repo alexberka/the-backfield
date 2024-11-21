@@ -8,9 +8,9 @@
         public string? ErrorMessage { get; set; }
         /// <summary>
         /// Throws error as IResult
-        /// Converts any error data stored in DTO
+        /// <br/>Converts any error data stored in DTO
         /// </summary>
-        /// <returns>Error as IResult (if no error, returns Results.BadRequest())</returns>
+        /// <returns>Error as IResult (if no error tags marked, returns Results.BadRequest())</returns>
         public IResult ThrowError()
         {
             if (NotFound)
