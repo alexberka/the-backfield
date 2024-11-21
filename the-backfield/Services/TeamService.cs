@@ -16,15 +16,15 @@ public class TeamService : ITeamService
         _userRepository = userRepository;
     }
 
-    public async Task<ResponseDTO> CreateTeamAsync(TeamSubmitDTO teamSubmit)
+    public async Task<TeamResponseDTO> CreateTeamAsync(TeamSubmitDTO teamSubmit)
     {
         User? user = await _userRepository.GetUserBySessionKeyAsync(teamSubmit.SessionKey);
         if (user == null)
         {
-            return new ResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+            return new TeamResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
         }
         Team newTeam = await _teamRepository.CreateTeamAsync(teamSubmit, user.Id);
-        return new ResponseDTO { Resource = newTeam, ResourceId = newTeam.Id };
+        return new TeamResponseDTO { Team = newTeam, TeamId = newTeam.Id };
     }
 
     public async Task<Team> DeleteTeamAsync(int teamId, int userId)
@@ -32,26 +32,34 @@ public class TeamService : ITeamService
         return await _teamRepository.DeleteTeamAsync(teamId);
     }
 
-    public async Task<Team?> GetSingleTeamAsync(int teamId, int userId)
+    public async Task<TeamResponseDTO> GetSingleTeamAsync(int teamId, string sessionKey)
     {
-        return await _teamRepository.GetSingleTeamAsync(teamId);
+        User? user = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
+        Team? team = await _teamRepository.GetSingleTeamAsync(teamId);
+        return SessionKeyClient.VerifyAccess(sessionKey, user, team);
     }
 
-    public async Task<List<Team>> GetTeamsAsync(int userId)
+    public async Task<TeamResponseDTO> GetTeamsBySessionKeyAsync(string sessionKey)
     {
-        return await _teamRepository.GetTeamsAsync(userId);
+        User? user = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
+        if (user == null)
+        {
+            return new TeamResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+        }
+        List<Team> teams = await _teamRepository.GetTeamsByUserIdAsync(user.Id);
+        return new TeamResponseDTO { Teams = teams };
     }
 
-    public async Task<ResponseDTO> UpdateTeamAsync(TeamSubmitDTO teamSubmit)
+    public async Task<TeamResponseDTO> UpdateTeamAsync(TeamSubmitDTO teamSubmit)
     {
         User? user = await _userRepository.GetUserBySessionKeyAsync(teamSubmit.SessionKey);
         Team? team = await _teamRepository.GetSingleTeamAsync(teamSubmit.Id);
-        ResponseDTO authCheck = SessionKeyClient.VerifyAccess(teamSubmit.SessionKey, user, team);
+        TeamResponseDTO authCheck = SessionKeyClient.VerifyAccess(teamSubmit.SessionKey, user, team);
         if (authCheck.ErrorMessage != null)
         {
             return authCheck;
         }
-        authCheck.Resource = await _teamRepository.UpdateTeamAsync(teamSubmit);
+        authCheck.Team = await _teamRepository.UpdateTeamAsync(teamSubmit);
         return authCheck;
     }
 }
