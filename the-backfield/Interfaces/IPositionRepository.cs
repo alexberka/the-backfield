@@ -5,5 +5,5 @@ namespace TheBackfield.Interfaces;
 public interface IPositionRepository
 {
     Task<List<Position>> GetPositionsAsync();
-    Task<Position?> GetSinglePosition(int positionId);
+    Task<Position?> GetSinglePositionAsync(int positionId);
 }

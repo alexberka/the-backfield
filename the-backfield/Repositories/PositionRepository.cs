@@ -20,7 +20,7 @@ public class PositionRepository : IPositionRepository
             .ToListAsync();
     }
 
-    public async Task<Position?> GetSinglePosition(int positionId)
+    public async Task<Position?> GetSinglePositionAsync(int positionId)
     {
         return await _dbContext.Positions
             .AsNoTracking()
