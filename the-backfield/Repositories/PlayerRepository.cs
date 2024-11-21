@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using TheBackfield.Data;
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
@@ -31,13 +32,28 @@ public class PlayerRepository : IPlayerRepository
         throw new NotImplementedException();
     }
 
-    public Task<Player> GetSinglePlayerAsync(int playerId, int userId)
+    public async Task<Player?> GetSinglePlayerAsync(int playerId)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == playerId);
     }
 
-    public Task<Player> UpdatePlayerAsync(PlayerSubmitDTO playerSubmit)
+    public async Task<Player?> UpdatePlayerAsync(Player updatedPlayer)
     {
-        throw new NotImplementedException();
+        /*Player? currentPlayer = await _dbContext.Players.SingleOrDefaultAsync(p => p.Id == updatedPlayer.Id);
+        if (currentPlayer == null)
+        {
+            return null;
+        }
+
+        currentPlayer.FirstName = updatedPlayer.FirstName;
+        currentPlayer.LastName = updatedPlayer.LastName;
+        currentPlayer.ImageUrl = updatedPlayer.ImageUrl;
+        currentPlayer.BirthDate = updatedPlayer.BirthDate;
+        currentPlayer.Hometown = updatedPlayer.Hometown;
+        currentPlayer.TeamId = updatedPlayer.TeamId;
+        currentPlayer.JerseyNumber = updatedPlayer.JerseyNumber;*/
+        _dbContext.Update(updatedPlayer);
+        await _dbContext.SaveChangesAsync();
+        return updatedPlayer;
     }
 }

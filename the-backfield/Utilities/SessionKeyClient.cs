@@ -50,5 +50,21 @@ namespace TheBackfield.Utilities
             }
             return new TeamResponseDTO { Team = team };
         }
+        public static PlayerResponseDTO VerifyAccess(string sessionKey, User? user, Player? player)
+        {
+            if (player == null)
+            {
+                return new PlayerResponseDTO { NotFound = true, ErrorMessage = "Invalid player id" };
+            }
+            if (user == null || user.SessionKey != sessionKey)
+            {
+                return new PlayerResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+            }
+            if (player.UserId != user.Id)
+            {
+                return new PlayerResponseDTO { Forbidden = true, ErrorMessage = "User does not have access" };
+            }
+            return new PlayerResponseDTO { Player = player };
+        }
     }
 }

@@ -21,5 +21,30 @@ public static class PlayerEndpoints
         })
             .WithOpenApi()
             .Produces<Player>(StatusCodes.Status201Created);
+
+        group.MapPut("/players/{playerId}", async (IPlayerService playerService, PlayerSubmitDTO playerSubmit, int playerId) =>
+        {
+            PlayerResponseDTO response = await playerService.UpdatePlayerAsync(playerSubmit);
+
+            if (response.ErrorMessage == "Invalid player id")
+            {
+                response = await playerService.CreatePlayerAsync(playerSubmit);
+                if (response.ErrorMessage != null || response.Player == null)
+                {
+                    return response.ParseError();
+                }
+                return Results.Created($"/players/{response.Player.Id}", response.Player);
+            }
+
+            if (response.ErrorMessage != null || response.Player == null)
+            {
+                return response.ParseError();
+            }
+
+            return Results.Ok(response.Player);
+        })
+            .WithOpenApi()
+            .Produces<Player>(StatusCodes.Status200OK)
+            .Produces<Player>(StatusCodes.Status201Created);
     }
 }
