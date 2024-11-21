@@ -7,10 +7,11 @@
         public bool NotFound { get; set; } = false;
         public string? ErrorMessage { get; set; }
         /// <summary>
-        /// Convert errors stored in DTO to IResult
+        /// Throws error as IResult
+        /// Converts any error data stored in DTO
         /// </summary>
         /// <returns>Error as IResult (if no error, returns Results.BadRequest())</returns>
-        public IResult ParseError()
+        public IResult ThrowError()
         {
             if (NotFound)
             {

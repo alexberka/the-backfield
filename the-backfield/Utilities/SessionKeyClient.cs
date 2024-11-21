@@ -50,6 +50,13 @@ namespace TheBackfield.Utilities
             }
             return new TeamResponseDTO { Team = team };
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sessionKey"></param>
+        /// <param name="user"></param>
+        /// <param name="player"></param>
+        /// <returns></returns>
         public static PlayerResponseDTO VerifyAccess(string sessionKey, User? user, Player? player)
         {
             if (player == null)

@@ -42,14 +42,22 @@ public class PlayerService : IPlayerService
         return await _playerRepository.DeletePlayerAsync(playerId, userId);
     }
 
-    public async Task<List<Player>> GetPlayersAsync(int userId)
+    public async Task<PlayerResponseDTO> GetPlayersAsync(string sessionKey)
     {
-        return await _playerRepository.GetPlayersAsync(userId);
+        User? user = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
+        if (user == null)
+        {
+            return new PlayerResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+        }
+
+        return new PlayerResponseDTO { Players = await _playerRepository.GetPlayersAsync(user.Id) };
     }
 
-    public async Task<Player> GetSinglePlayerAsync(int playerId, int userId)
+    public async Task<PlayerResponseDTO> GetSinglePlayerAsync(int playerId, string sessionKey)
     {
-        return await _playerRepository.GetSinglePlayerAsync(playerId);
+        User? user = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
+        Player? player = await _playerRepository.GetSinglePlayerAsync(playerId);
+        return SessionKeyClient.VerifyAccess(sessionKey, user, player);
     }
 
     public async Task<PlayerResponseDTO> UpdatePlayerAsync(PlayerSubmitDTO playerSubmit)
