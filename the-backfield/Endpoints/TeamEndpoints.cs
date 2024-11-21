@@ -67,7 +67,7 @@ public static class TeamEndpoints
                 return Results.Unauthorized();
             }
 
-            return Results.Created($"/teams/{createResponse.TeamId}", createResponse.Team);
+            return Results.Created($"/teams/{createResponse.Team.Id}", createResponse.Team);
         })
             .WithOpenApi()
             .Produces<Team>(StatusCodes.Status201Created);
@@ -100,7 +100,7 @@ public static class TeamEndpoints
                     return Results.Unauthorized();
                 }
                 
-                return Results.Created($"/teams/{createResponse.TeamId}", createResponse.Team);
+                return Results.Created($"/teams/{createResponse.Team.Id}", createResponse.Team);
             }
 
             if (updateResponse.Unauthorized)

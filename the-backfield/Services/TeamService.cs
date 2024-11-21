@@ -24,7 +24,7 @@ public class TeamService : ITeamService
             return new TeamResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
         }
         Team newTeam = await _teamRepository.CreateTeamAsync(teamSubmit, user.Id);
-        return new TeamResponseDTO { Team = newTeam, TeamId = newTeam.Id };
+        return new TeamResponseDTO { Team = newTeam };
     }
 
     public async Task<Team> DeleteTeamAsync(int teamId, int userId)

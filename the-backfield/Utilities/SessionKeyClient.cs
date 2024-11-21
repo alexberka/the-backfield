@@ -48,7 +48,7 @@ namespace TheBackfield.Utilities
             {
                 return new TeamResponseDTO { Forbidden = true, ErrorMessage = "User does not have access" };
             }
-            return new TeamResponseDTO { Team = team, TeamId = team.Id };
+            return new TeamResponseDTO { Team = team };
         }
     }
 }

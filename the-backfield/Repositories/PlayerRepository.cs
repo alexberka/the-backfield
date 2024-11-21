@@ -14,9 +14,11 @@ public class PlayerRepository : IPlayerRepository
         _dbContext = context;
     }
 
-    public Task<Player> CreatePlayerAsync(PlayerSubmitDTO playerSubmit)
+    public async Task<Player> CreatePlayerAsync(Player newPlayer)
     {
-        throw new NotImplementedException();
+        _dbContext.Players.Add(newPlayer);
+        await _dbContext.SaveChangesAsync();
+        return newPlayer;
     }
 
     public Task<string?> DeletePlayerAsync(int playerId, int userId)
