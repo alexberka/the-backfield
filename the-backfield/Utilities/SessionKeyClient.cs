@@ -34,21 +34,21 @@ namespace TheBackfield.Utilities
         /// <param name="user"></param>
         /// <param name="team"></param>
         /// <returns>ResponseDTO with Response = Team if access granted, Error = IResult if access denied </returns>
-        public static ResponseDTO VerifyAccess(string sessionKey, User? user, Team? team)
+        public static TeamResponseDTO VerifyAccess(string sessionKey, User? user, Team? team)
         {
             if (team == null)
             {
-                return new ResponseDTO { NotFound = true, ErrorMessage = "Invalid team id" };
+                return new TeamResponseDTO { NotFound = true, ErrorMessage = "Invalid team id" };
             }
             if (user == null || user.SessionKey != sessionKey)
             {
-                return new ResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+                return new TeamResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
             }
             if (team.UserId != user.Id)
             {
-                return new ResponseDTO { Forbidden = true, ErrorMessage = "User does not have access" };
+                return new TeamResponseDTO { Forbidden = true, ErrorMessage = "User does not have access" };
             }
-            return new ResponseDTO { Resource = team, ResourceId = team.Id };
+            return new TeamResponseDTO { Team = team, TeamId = team.Id };
         }
     }
 }

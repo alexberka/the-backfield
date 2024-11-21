@@ -5,9 +5,9 @@ namespace TheBackfield.Interfaces;
 
 public interface ITeamService
 {
-    Task<List<Team>> GetTeamsAsync(int userId);
-    Task<Team?> GetSingleTeamAsync(int teamId, int userId);
-    Task<ResponseDTO> CreateTeamAsync(TeamSubmitDTO teamSubmit);
-    Task<ResponseDTO> UpdateTeamAsync(TeamSubmitDTO teamSubmit);
+    Task<TeamResponseDTO> GetTeamsBySessionKeyAsync(string sessionKey);
+    Task<TeamResponseDTO> GetSingleTeamAsync(int teamId, string sessionKey);
+    Task<TeamResponseDTO> CreateTeamAsync(TeamSubmitDTO teamSubmit);
+    Task<TeamResponseDTO> UpdateTeamAsync(TeamSubmitDTO teamSubmit);
     Task<Team> DeleteTeamAsync(int teamId, int userId);
 }

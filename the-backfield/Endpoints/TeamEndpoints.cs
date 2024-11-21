@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using System.Threading.Tasks.Dataflow;
 using Microsoft.AspNetCore.Mvc;
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
@@ -13,6 +14,39 @@ public static class TeamEndpoints
     {
         var group = routes.MapGroup("").WithTags(nameof(Team));
 
+        group.MapGet("/teams", async (ITeamService teamService, string sessionKey) =>
+        {
+            TeamResponseDTO readResponse = await teamService.GetTeamsBySessionKeyAsync(sessionKey);
+            if (readResponse.Unauthorized)
+            {
+                return Results.Unauthorized();
+            }
+            return Results.Ok(readResponse.Teams);
+        })
+            .WithOpenApi()
+            .Produces<List<Team>>(StatusCodes.Status200OK);
+
+        group.MapGet("/teams/{teamId}", async (ITeamService teamService, int teamId, string sessionKey) =>
+        {
+            TeamResponseDTO response = await teamService.GetSingleTeamAsync(teamId, sessionKey);
+            if (response.NotFound)
+            {
+                return Results.NotFound(response.ErrorMessage);
+            }
+
+            if (response.Unauthorized)
+            {
+                return Results.Unauthorized();
+            }
+
+            if (response.Forbidden)
+            {
+                return Results.StatusCode(403);
+            }
+
+            return Results.Ok(response.Team);
+        });
+
         group.MapPost("/teams", async (ITeamService teamService, TeamSubmitDTO teamSubmit) =>
         {
             if (string.IsNullOrEmpty(teamSubmit.LocationName) && string.IsNullOrEmpty(teamSubmit.Nickname))
@@ -26,14 +60,14 @@ public static class TeamEndpoints
                 return Results.BadRequest("Color values must be stored as 6 digit hexadecimals in format '#xxxxxx' (lettercasing indifferent).");
             }
 
-            ResponseDTO createResponse = await teamService.CreateTeamAsync(teamSubmit);
+            TeamResponseDTO createResponse = await teamService.CreateTeamAsync(teamSubmit);
 
             if (createResponse.Unauthorized)
             {
                 return Results.Unauthorized();
             }
 
-            return Results.Created($"/teams/{createResponse.ResourceId}", createResponse.Resource);
+            return Results.Created($"/teams/{createResponse.TeamId}", createResponse.Team);
         })
             .WithOpenApi()
             .Produces<Team>(StatusCodes.Status201Created);
@@ -56,17 +90,17 @@ public static class TeamEndpoints
                 return Results.BadRequest("Color values must be stored as 6 digit hexadecimals in format '#xxxxxx' (lettercasing indifferent).");
             }
 
-            ResponseDTO updateResponse = await teamService.UpdateTeamAsync(teamSubmit);
+            TeamResponseDTO updateResponse = await teamService.UpdateTeamAsync(teamSubmit);
             if (updateResponse.NotFound)
             {
-                ResponseDTO createResponse = await teamService.CreateTeamAsync(teamSubmit);
+                TeamResponseDTO createResponse = await teamService.CreateTeamAsync(teamSubmit);
 
                 if (createResponse.Unauthorized)
                 {
                     return Results.Unauthorized();
                 }
                 
-                return Results.Created($"/teams/{createResponse.ResourceId}", createResponse.Resource);
+                return Results.Created($"/teams/{createResponse.TeamId}", createResponse.Team);
             }
 
             if (updateResponse.Unauthorized)
@@ -76,10 +110,10 @@ public static class TeamEndpoints
 
             if (updateResponse.Forbidden)
             {
-                return Results.Forbid();
+                return Results.StatusCode(403);
             }
 
-            return Results.Ok(updateResponse.Resource);
+            return Results.Ok(updateResponse.Team);
         })
             .WithOpenApi()
             .Produces<Team>(StatusCodes.Status201Created);

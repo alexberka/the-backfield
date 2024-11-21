@@ -41,12 +41,14 @@ public class TeamRepository : ITeamRepository
 
     public async Task<Team?> GetSingleTeamAsync(int teamId)
     {
-        return await _dbContext.Teams.SingleOrDefaultAsync(t => t.Id == teamId);
+        return await _dbContext.Teams
+            .Include(t => t.Players)
+            .SingleOrDefaultAsync(t => t.Id == teamId);
     }
 
-    public Task<List<Team>> GetTeamsAsync(int userId)
+    public async Task<List<Team>> GetTeamsByUserIdAsync(int userId)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Teams.Where(t => t.UserId == userId).ToListAsync();
     }
 
     public async Task<Team?> UpdateTeamAsync(TeamSubmitDTO teamSubmit)
