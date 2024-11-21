@@ -27,14 +27,21 @@ public class PlayerRepository : IPlayerRepository
         throw new NotImplementedException();
     }
 
-    public Task<List<Player>> GetPlayersAsync(int userId)
+    public async Task<List<Player>> GetPlayersAsync(int userId)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Players.AsNoTracking()
+            .Include(p => p.Team)
+            .Include(p => p.Positions)
+            .Where(p => p.UserId == userId)
+            .ToListAsync();
     }
 
     public async Task<Player?> GetSinglePlayerAsync(int playerId)
     {
-        return await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == playerId);
+        return await _dbContext.Players.AsNoTracking()
+            .Include(p => p.Team)
+            .Include(p => p.Positions)
+            .SingleOrDefaultAsync(p => p.Id == playerId);
     }
 
     public async Task<Player?> UpdatePlayerAsync(Player updatedPlayer)
