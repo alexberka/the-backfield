@@ -63,4 +63,9 @@ public class PlayerRepository : IPlayerRepository
         await _dbContext.SaveChangesAsync();
         return updatedPlayer;
     }
+
+    public async Task<Player> SetPlayerPositionsAsync(PlayerPositionSubmitDTO playerPositionSubmit)
+    {
+        throw new NotImplementedException();
+    }
 }
