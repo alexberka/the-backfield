@@ -32,14 +32,31 @@ public class GameRepository : IGameRepository
             .SingleOrDefaultAsync(g => g.Id == gameId);
     }
 
-    public Task<Game> CreateGameAsync(GameSubmitDTO gameSubmit)
+    public async Task<Game> CreateGameAsync(Game newGame)
     {
-        throw new NotImplementedException();
+        _dbContext.Games.Add(newGame);
+        await _dbContext.SaveChangesAsync();
+        return newGame;
     }
 
-    public Task<Game> UpdateGameAsync(GameSubmitDTO gameSubmit)
+    public async Task<Game?> UpdateGameAsync(Game updatedGame)
     {
-        throw new NotImplementedException();
+        Game? game = await _dbContext.Games.FindAsync(updatedGame.Id);
+        if (game == null)
+        {
+            return null;
+        }
+
+        game.HomeTeamId = updatedGame.HomeTeamId;
+        game.HomeTeamScore = updatedGame.HomeTeamScore;
+        game.AwayTeamId = updatedGame.AwayTeamId;
+        game.AwayTeamScore = updatedGame.AwayTeamScore;
+        game.GameStart = updatedGame.GameStart;
+        game.GamePeriods = updatedGame.GamePeriods;
+        game.PeriodLength = updatedGame.PeriodLength;
+
+        await _dbContext.SaveChangesAsync();
+        return game;
     }
 
     public Task<string?> DeleteGameAsync(int gameId, int userId)

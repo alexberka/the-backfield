@@ -35,5 +35,47 @@ public static class GameEndpoints
         })
             .WithOpenApi()
             .Produces<Game>(StatusCodes.Status200OK);
+
+        group.MapPost("/games", async (IGameService gameService, GameSubmitDTO gameSubmit) =>
+        {
+            GameResponseDTO response = await gameService.CreateGameAsync(gameSubmit);
+            if (response.Error || response.Game == null)
+            {
+                return response.ThrowError();
+            }
+
+            return Results.Created($"/games/{response.Game.Id}", response.Game);
+        })
+            .WithOpenApi()
+            .Produces<Game>(StatusCodes.Status201Created);
+
+        group.MapPut("/games/{gameId}", async (IGameService gameService, int gameId, GameSubmitDTO gameSubmit) =>
+        {
+            if (gameId != gameSubmit.Id)
+            {
+                return Results.BadRequest("Id in payload must be the same as the gameId in the URI");
+            }
+
+            GameResponseDTO response = await gameService.UpdateGameAsync(gameSubmit);
+            if (response.ErrorMessage == "Invalid game id")
+            {
+                response = await gameService.CreateGameAsync(gameSubmit);
+                if (response.Error || response.Game == null)
+                {
+                    return response.ThrowError();
+                }
+                return Results.Created($"/games/{response.Game.Id}", response.Game);
+            }
+
+            if (response.Error || response.Game == null)
+            {
+                return response.ThrowError();
+            }
+
+            return Results.Ok(response.Game);
+        })
+            .WithOpenApi()
+            .Produces<Game>(StatusCodes.Status200OK)
+            .Produces<Game>(StatusCodes.Status201Created);
     }
 }
