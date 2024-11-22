@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using TheBackfield.Data;
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
@@ -16,12 +17,19 @@ public class GameRepository : IGameRepository
 
     public Task<List<Game>> GetAllGamesAsync(int userId)
     {
-        throw new NotImplementedException();
+        return _dbContext.Games
+            .AsNoTracking()
+            .Where(g => g.UserId == userId)
+            .ToListAsync();
     }
 
-    public Task<Game> GetSingleGameAsync(int gameId, int userId)
+    public Task<Game?> GetSingleGameAsync(int gameId)
     {
-        throw new NotImplementedException();
+        return _dbContext.Games
+            .AsNoTracking()
+            .Include(g => g.HomeTeam)
+            .Include(g => g.AwayTeam)
+            .SingleOrDefaultAsync(g => g.Id == gameId);
     }
 
     public Task<Game> CreateGameAsync(GameSubmitDTO gameSubmit)

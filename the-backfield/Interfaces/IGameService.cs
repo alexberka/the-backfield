@@ -5,9 +5,9 @@ namespace TheBackfield.Interfaces;
 
 public interface IGameService
 {
-    Task<List<Game>> GetAllGamesAsync(int userId);
-    Task<Game> GetSingleGameAsync(int gameId, int userId);
-    Task<Game> CreateGameAsync(GameSubmitDTO gameSubmit);
-    Task<Game> UpdateGameAsync(GameSubmitDTO gameSubmit);
+    Task<GameResponseDTO> GetAllGamesAsync(string sessionKey);
+    Task<GameResponseDTO> GetSingleGameAsync(int gameId, string sessionKey);
+    Task<GameResponseDTO> CreateGameAsync(GameSubmitDTO gameSubmit);
+    Task<GameResponseDTO> UpdateGameAsync(GameSubmitDTO gameSubmit);
     Task<string?> DeleteGameAsync(int gameId, int userId);
 }
