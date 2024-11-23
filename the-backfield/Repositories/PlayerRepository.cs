@@ -64,8 +64,67 @@ public class PlayerRepository : IPlayerRepository
         return updatedPlayer;
     }
 
-    public async Task<Player> SetPlayerPositionsAsync(PlayerPositionSubmitDTO playerPositionSubmit)
+    public async Task<Player> SetPlayerPositionsAsync(int playerId, List<int> positionIds)
     {
-        throw new NotImplementedException();
+        Player? player = await _dbContext.Players
+            .Include(p => p.Positions)
+            .SingleOrDefaultAsync(p => p.Id == playerId);
+
+        if (player == null)
+        {
+            return null;
+        }
+
+        player.Positions.RemoveAll(pp => !positionIds.Any(pi => pi == pp.Id));
+
+        List<Position> playerPositions = await _dbContext.Positions
+            .Where(p => positionIds.Any(pi => pi == p.Id) && !player.Positions.Contains(p))
+            .ToListAsync();
+
+        player.Positions.AddRange(playerPositions);
+
+        await _dbContext.SaveChangesAsync();
+
+        return player;
+    }
+
+    public async Task<Player?> AddPlayerPositionsAsync(int playerId, List<int> positionIds)
+    {
+        Player? player = await _dbContext.Players
+            .Include(p => p.Positions)
+            .SingleOrDefaultAsync(p => p.Id == playerId);
+
+        if (player == null)
+        {
+            return null;
+        }
+
+        List<Position> playerPositions = await _dbContext.Positions
+            .Where(p => positionIds.Any(pi => pi == p.Id) && !player.Positions.Contains(p))
+            .ToListAsync();
+
+        player.Positions.AddRange(playerPositions);
+
+        await _dbContext.SaveChangesAsync();
+
+        return player;
+    }
+
+    public async Task<Player?> RemovePlayerPositionsAsync(int playerId, List<int> positionIds)
+    {
+        Player? player = await _dbContext.Players
+            .Include(p => p.Positions)
+            .SingleOrDefaultAsync(p => p.Id == playerId);
+
+        if (player == null)
+        {
+            return null;
+        }
+
+        player.Positions.RemoveAll(pp => positionIds.Any(pi => pi == pp.Id));
+
+        await _dbContext.SaveChangesAsync();
+
+        return player;
     }
 }
