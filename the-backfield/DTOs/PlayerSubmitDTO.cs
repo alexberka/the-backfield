@@ -12,6 +12,7 @@ public class PlayerSubmitDTO
     public string? Hometown { get; set; }
     public int TeamId { get; set; } = 0;
     public int? JerseyNumber { get; set; }
+    public List<int> PositionIds { get; set; } = [];
     public string SessionKey { get; set; } = "";
 
     public Player MapToPlayer(int userId, Player? player = null)

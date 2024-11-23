@@ -78,5 +78,41 @@ public static class PlayerEndpoints
             .WithOpenApi()
             .Produces<Player>(StatusCodes.Status200OK)
             .Produces<Player>(StatusCodes.Status201Created);
+
+        group.MapPost("/players/{playerId}/add-positions", async (IPlayerService playerService, PlayerPositionSubmitDTO playerPositionSubmit, int playerId) =>
+        {
+            if (playerPositionSubmit.PlayerId != playerId)
+            {
+                return Results.BadRequest("Id in payload does not match playerId in URI");
+            }
+
+            PlayerResponseDTO response = await playerService.AddPlayerPositionsAsync(playerPositionSubmit);
+            if (response.Error)
+            {
+                return response.ThrowError();
+            }
+
+            return Results.Ok(response.Player);
+        })
+            .WithOpenApi()
+            .Produces<Player>(StatusCodes.Status200OK);
+
+        group.MapPost("/players/{playerId}/remove-positions", async (IPlayerService playerService, PlayerPositionSubmitDTO playerPositionSubmit, int playerId) =>
+        {
+            if (playerPositionSubmit.PlayerId != playerId)
+            {
+                return Results.BadRequest("Id in payload does not match playerId in URI");
+            }
+
+            PlayerResponseDTO response = await playerService.RemovePlayerPositionsAsync(playerPositionSubmit);
+            if (response.Error)
+            {
+                return response.ThrowError();
+            }
+
+            return Results.Ok(response.Player);
+        })
+            .WithOpenApi()
+            .Produces<Player>(StatusCodes.Status200OK);
     }
 }
