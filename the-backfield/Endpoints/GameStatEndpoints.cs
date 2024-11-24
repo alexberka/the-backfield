@@ -40,5 +40,18 @@ public static class GameStatEndpoints
         })
             .WithOpenApi()
             .Produces<GameStat>(StatusCodes.Status200OK);
+
+        group.MapDelete("/game-stats/{gameStatId}", async (IGameStatService gameStatService, int gameStatId, string sessionKey) =>
+        {
+            GameStatResponseDTO response = await gameStatService.DeleteGameStatAsync(gameStatId, sessionKey);
+            if (response.Error)
+            {
+                return response.ThrowError();
+            }
+
+            return Results.NoContent();
+        })
+            .WithOpenApi()
+            .Produces(StatusCodes.Status204NoContent);
     }
 }

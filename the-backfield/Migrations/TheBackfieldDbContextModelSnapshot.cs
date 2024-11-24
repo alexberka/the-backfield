@@ -34,7 +34,7 @@ namespace the_backfield.Migrations
 
                     b.HasIndex("PositionsId");
 
-                    b.ToTable("PlayerPosition");
+                    b.ToTable("PlayerPosition", (string)null);
                 });
 
             modelBuilder.Entity("TheBackfield.Models.Game", b =>
@@ -75,7 +75,7 @@ namespace the_backfield.Migrations
 
                     b.HasIndex("HomeTeamId");
 
-                    b.ToTable("Games");
+                    b.ToTable("Games", (string)null);
                 });
 
             modelBuilder.Entity("TheBackfield.Models.GameStat", b =>
@@ -148,7 +148,7 @@ namespace the_backfield.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("GameStats");
+                    b.ToTable("GameStats", (string)null);
                 });
 
             modelBuilder.Entity("TheBackfield.Models.Player", b =>
@@ -191,7 +191,7 @@ namespace the_backfield.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("Players");
+                    b.ToTable("Players", (string)null);
                 });
 
             modelBuilder.Entity("TheBackfield.Models.Position", b =>
@@ -212,7 +212,7 @@ namespace the_backfield.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Positions");
+                    b.ToTable("Positions", (string)null);
 
                     b.HasData(
                         new
@@ -438,7 +438,7 @@ namespace the_backfield.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Teams");
+                    b.ToTable("Teams", (string)null);
                 });
 
             modelBuilder.Entity("TheBackfield.Models.User", b =>
@@ -469,7 +469,7 @@ namespace the_backfield.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("PlayerPosition", b =>
