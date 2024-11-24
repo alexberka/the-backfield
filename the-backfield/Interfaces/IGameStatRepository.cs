@@ -5,7 +5,8 @@ namespace TheBackfield.Interfaces;
 
 public interface IGameStatRepository
 {
-    Task<GameStat> CreateGameStatAsync(GameStatSubmitDTO gameStatSubmit);
-    Task<GameStat> UpdateGameStatAsync(GameStatSubmitDTO gameStatSubmit);
+    Task<GameStat?> GetSingleGameStatAsync(int gameStatId);
+    Task<GameStat> CreateGameStatAsync(GameStat newGameStat);
+    Task<GameStat?> UpdateGameStatAsync(GameStat updatedGameStat);
     Task<string?> DeleteGameStatAsync(int gameStatId, int userId);
 }
