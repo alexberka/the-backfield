@@ -15,17 +15,17 @@ public class GameRepository : IGameRepository
         _dbContext = context;
     }
 
-    public Task<List<Game>> GetAllGamesAsync(int userId)
+    public async Task<List<Game>> GetAllGamesAsync(int userId)
     {
-        return _dbContext.Games
+        return await _dbContext.Games
             .AsNoTracking()
             .Where(g => g.UserId == userId)
             .ToListAsync();
     }
 
-    public Task<Game?> GetSingleGameAsync(int gameId)
+    public async Task<Game?> GetSingleGameAsync(int gameId)
     {
-        return _dbContext.Games
+        return await _dbContext.Games
             .AsNoTracking()
             .Include(g => g.HomeTeam)
             .Include(g => g.AwayTeam)

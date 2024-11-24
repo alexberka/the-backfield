@@ -96,5 +96,28 @@ namespace TheBackfield.Utilities
             }
             return new GameResponseDTO { Game = game };
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sessionKey">SessionKey parameter received from client</param>
+        /// <param name="user">User object retrieved with SessionKey (may be null)</param>
+        /// <param name="gameStat">GameStat object retrieved with request (may be null)</param>
+        /// <returns></returns>
+        public static GameStatResponseDTO VerifyAccess(string sessionKey, User? user, GameStat? gameStat)
+        {
+            if (gameStat == null)
+            {
+                return new GameStatResponseDTO { NotFound = true, ErrorMessage = "Invalid gameStat id" };
+            }
+            if (user == null || user.SessionKey != sessionKey)
+            {
+                return new GameStatResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+            }
+            if (gameStat.UserId != user.Id)
+            {
+                return new GameStatResponseDTO { Forbidden = true, ErrorMessage = "User does not have access" };
+            }
+            return new GameStatResponseDTO { GameStat = gameStat };
+        }
     }
 }

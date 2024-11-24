@@ -67,5 +67,21 @@
                 ErrorMessage = ErrorMessage
             };
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T">Class that extends base class ResponseDTO</typeparam>
+        /// <returns></returns>
+        public T CastTo<T>() where T : ResponseDTO
+        {
+            T cast = Activator.CreateInstance<T>();
+
+            cast.Unauthorized = Unauthorized;
+            cast.NotFound = NotFound;
+            cast.Forbidden = Forbidden;
+            cast.ErrorMessage = ErrorMessage;
+
+            return cast;
+        }
     }
 }
