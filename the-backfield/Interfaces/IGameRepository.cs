@@ -9,5 +9,5 @@ public interface IGameRepository
     Task<Game?> GetSingleGameAsync(int gameId);
     Task<Game> CreateGameAsync(Game newGame);
     Task<Game?> UpdateGameAsync(Game updatedGame);
-    Task<string?> DeleteGameAsync(int gameId, int userId);
+    Task<string?> DeleteGameAsync(int gameId);
 }

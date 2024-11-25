@@ -9,5 +9,5 @@ public interface IGameService
     Task<GameResponseDTO> GetSingleGameAsync(int gameId, string sessionKey);
     Task<GameResponseDTO> CreateGameAsync(GameSubmitDTO gameSubmit);
     Task<GameResponseDTO> UpdateGameAsync(GameSubmitDTO gameSubmit);
-    Task<string?> DeleteGameAsync(int gameId, int userId);
+    Task<GameResponseDTO> DeleteGameAsync(int gameId, string sessionKey);
 }

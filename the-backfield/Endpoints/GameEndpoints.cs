@@ -77,5 +77,18 @@ public static class GameEndpoints
             .WithOpenApi()
             .Produces<Game>(StatusCodes.Status200OK)
             .Produces<Game>(StatusCodes.Status201Created);
+
+        group.MapDelete("/games/{gameId}", async (IGameService gameService, int gameId, string sessionKey) =>
+        {
+            GameResponseDTO response = await gameService.DeleteGameAsync(gameId, sessionKey);
+            if (response.Error)
+            {
+                return response.ThrowError();
+            }
+
+            return Results.NoContent();
+        })
+            .WithOpenApi()
+            .Produces(StatusCodes.Status204NoContent);
     }
 }
