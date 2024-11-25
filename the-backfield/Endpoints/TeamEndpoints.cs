@@ -117,5 +117,18 @@ public static class TeamEndpoints
         })
             .WithOpenApi()
             .Produces<Team>(StatusCodes.Status201Created);
+
+        group.MapDelete("/teams/{teamId}", async (ITeamService teamService, int teamId, string sessionKey) =>
+        {
+            TeamResponseDTO response = await teamService.DeleteTeamAsync(teamId, sessionKey);
+            if (response.Error)
+            {
+                return response.ThrowError();
+            }
+
+            return Results.NoContent();
+        })
+            .WithOpenApi()
+            .Produces(StatusCodes.Status204NoContent);
     }
 }
