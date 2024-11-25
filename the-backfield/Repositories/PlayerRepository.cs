@@ -22,9 +22,17 @@ public class PlayerRepository : IPlayerRepository
         return newPlayer;
     }
 
-    public Task<string?> DeletePlayerAsync(int playerId, int userId)
+    public async Task<string?> DeletePlayerAsync(int playerId)
     {
-        throw new NotImplementedException();
+        Player? player = await _dbContext.Players.FindAsync(playerId);
+        if (player == null)
+        {
+            return "Invalid player id";
+        }
+
+        _dbContext.Players.Remove(player);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<List<Player>> GetPlayersAsync(int userId)
@@ -64,7 +72,7 @@ public class PlayerRepository : IPlayerRepository
         return updatedPlayer;
     }
 
-    public async Task<Player> SetPlayerPositionsAsync(int playerId, List<int> positionIds)
+    public async Task<Player?> SetPlayerPositionsAsync(int playerId, List<int> positionIds)
     {
         Player? player = await _dbContext.Players
             .Include(p => p.Positions)

@@ -8,7 +8,7 @@ public interface IPlayerService
     Task<PlayerResponseDTO> GetSinglePlayerAsync(int playerId, string sessionKey);
     Task<PlayerResponseDTO> CreatePlayerAsync(PlayerSubmitDTO playerSubmit);
     Task<PlayerResponseDTO> UpdatePlayerAsync(PlayerSubmitDTO playerSubmit);
-    Task<string?> DeletePlayerAsync(int playerId, int userId);
+    Task<PlayerResponseDTO> DeletePlayerAsync(int playerId, string sessionKey);
     Task<PlayerResponseDTO> AddPlayerPositionsAsync(PlayerPositionSubmitDTO playerPositionSubmit);
     Task<PlayerResponseDTO> RemovePlayerPositionsAsync(PlayerPositionSubmitDTO playerPositionSubmit);
 }

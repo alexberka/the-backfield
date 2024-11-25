@@ -60,7 +60,7 @@ public class GameStatRepository : IGameStatRepository
         GameStat? gameStat = await _dbContext.GameStats.FindAsync(gameStatId);
         if (gameStat == null)
         {
-            return "Invalid gameStat Id";
+            return "Invalid gameStat id";
         }
 
         _dbContext.GameStats.Remove(gameStat);

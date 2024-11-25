@@ -114,5 +114,18 @@ public static class PlayerEndpoints
         })
             .WithOpenApi()
             .Produces<Player>(StatusCodes.Status200OK);
+
+        group.MapDelete("/players/{playerId}", async (IPlayerService playerService, int playerId, string sessionKey) =>
+        {
+            PlayerResponseDTO response = await playerService.DeletePlayerAsync(playerId, sessionKey);
+            if (response.Error)
+            {
+                return response.ThrowError();
+            }
+
+            return Results.NoContent();
+        })
+            .WithOpenApi()
+            .Produces(StatusCodes.Status204NoContent);
     }
 }
