@@ -28,11 +28,6 @@ public class GameStatRepository : IGameStatRepository
         return newGameStat;
     }
 
-    public Task<string?> DeleteGameStatAsync(int gameStatId, int userId)
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task<GameStat?> UpdateGameStatAsync(GameStat updatedGameStat)
     {
         GameStat? gameStat = await _dbContext.GameStats.FindAsync(updatedGameStat.Id);
@@ -58,5 +53,18 @@ public class GameStatRepository : IGameStatRepository
 
         await _dbContext.SaveChangesAsync();
         return gameStat;
+    }
+
+    public async Task<string?> DeleteGameStatAsync(int gameStatId)
+    {
+        GameStat? gameStat = await _dbContext.GameStats.FindAsync(gameStatId);
+        if (gameStat == null)
+        {
+            return "Invalid gameStat id";
+        }
+
+        _dbContext.GameStats.Remove(gameStat);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 }

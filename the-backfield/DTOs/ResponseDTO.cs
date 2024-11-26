@@ -68,7 +68,7 @@
             };
         }
         /// <summary>
-        /// 
+        /// Convert instance of ResponseDTO or any class that extends ResponseDTO to instance of type T. Only base class properties are transferred.
         /// </summary>
         /// <typeparam name="T">Class that extends base class ResponseDTO</typeparam>
         /// <returns></returns>

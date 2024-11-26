@@ -9,5 +9,5 @@ public interface ITeamRepository
     Task<Team?> GetSingleTeamAsync(int teamId);
     Task<Team> CreateTeamAsync(TeamSubmitDTO teamSubmit, int userId);
     Task<Team?> UpdateTeamAsync(TeamSubmitDTO teamSubmit);
-    Task<Team> DeleteTeamAsync(int teamId);
+    Task<string?> DeleteTeamAsync(int teamId);
 }

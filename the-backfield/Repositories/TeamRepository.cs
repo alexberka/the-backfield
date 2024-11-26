@@ -34,9 +34,17 @@ public class TeamRepository : ITeamRepository
         return newTeam;
     }
 
-    public Task<Team> DeleteTeamAsync(int teamId)
+    public async Task<string?> DeleteTeamAsync(int teamId)
     {
-        throw new NotImplementedException();
+        Team? team = await _dbContext.Teams.FindAsync(teamId);
+        if (team == null)
+        {
+            return "Invalid team id";
+        }
+
+        _dbContext.Teams.Remove(team);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<Team?> GetSingleTeamAsync(int teamId)

@@ -27,9 +27,17 @@ public class TeamService : ITeamService
         return new TeamResponseDTO { Team = newTeam };
     }
 
-    public async Task<Team> DeleteTeamAsync(int teamId, int userId)
+    public async Task<TeamResponseDTO> DeleteTeamAsync(int teamId, string sessionKey)
     {
-        return await _teamRepository.DeleteTeamAsync(teamId);
+        User? user = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
+        Team? team = await _teamRepository.GetSingleTeamAsync(teamId);
+        TeamResponseDTO teamCheck = SessionKeyClient.VerifyAccess(sessionKey, user, team);
+        if (teamCheck.Error)
+        {
+            return teamCheck;
+        }
+
+        return new TeamResponseDTO { ErrorMessage = await _teamRepository.DeleteTeamAsync(teamId) };
     }
 
     public async Task<TeamResponseDTO> GetSingleTeamAsync(int teamId, string sessionKey)

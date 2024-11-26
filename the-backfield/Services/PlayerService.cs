@@ -39,9 +39,17 @@ public class PlayerService : IPlayerService
         return new PlayerResponseDTO { Player = await _playerRepository.SetPlayerPositionsAsync(addedPlayer.Id, playerSubmit.PositionIds) };
     }
 
-    public async Task<string?> DeletePlayerAsync(int playerId, int userId)
+    public async Task<PlayerResponseDTO> DeletePlayerAsync(int playerId, string sessionKey)
     {
-        return await _playerRepository.DeletePlayerAsync(playerId, userId);
+        User? user = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
+        Player? player = await _playerRepository.GetSinglePlayerAsync(playerId);
+        PlayerResponseDTO playerCheck = SessionKeyClient.VerifyAccess(sessionKey, user, player);
+        if (playerCheck.Error)
+        {
+            return playerCheck;
+        }
+
+        return new PlayerResponseDTO { ErrorMessage = await _playerRepository.DeletePlayerAsync(playerId) };
     }
 
     public async Task<PlayerResponseDTO> GetPlayersAsync(string sessionKey)

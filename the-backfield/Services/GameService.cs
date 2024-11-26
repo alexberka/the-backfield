@@ -48,9 +48,17 @@ public class GameService : IGameService
         return new GameResponseDTO { Game = await _gameRepository.CreateGameAsync(gameSubmit.MapToGame(user.Id)) };
     }
 
-    public async Task<string?> DeleteGameAsync(int gameId, int userId)
+    public async Task<GameResponseDTO> DeleteGameAsync(int gameId, string sessionKey)
     {
-        return await _gameRepository.DeleteGameAsync(gameId, userId);
+        User? user = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
+        Game? game = await _gameRepository.GetSingleGameAsync(gameId);
+        GameResponseDTO gameCheck = SessionKeyClient.VerifyAccess(sessionKey, user, game);
+        if (gameCheck.Error)
+        {
+            return gameCheck;
+        }
+
+        return new GameResponseDTO { ErrorMessage = await _gameRepository.DeleteGameAsync(gameId) };
     }
 
     public async Task<GameResponseDTO> GetAllGamesAsync(string sessionKey)

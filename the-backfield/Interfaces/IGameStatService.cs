@@ -7,5 +7,5 @@ public interface IGameStatService
 {
     Task<GameStatResponseDTO> CreateGameStatAsync(GameStatSubmitDTO gameStatSubmit);
     Task<GameStatResponseDTO> UpdateGameStatAsync(GameStatSubmitDTO gameStatSubmit);
-    Task<string?> DeleteGameStatAsync(int gameStatId, int userId);
+    Task<GameStatResponseDTO> DeleteGameStatAsync(int gameStatId, string sessionKey);
 }

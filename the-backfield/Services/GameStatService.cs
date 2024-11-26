@@ -50,9 +50,17 @@ public class GameStatService : IGameStatService
         return new GameStatResponseDTO { GameStat = await _gameStatRepository.CreateGameStatAsync(gameStatSubmit.MapToGameStat(user.Id)) };
     }
 
-    public async Task<string?> DeleteGameStatAsync(int gameStatId, int userId)
+    public async Task<GameStatResponseDTO> DeleteGameStatAsync(int gameStatId, string sessionKey)
     {
-        return await _gameStatRepository.DeleteGameStatAsync(gameStatId, userId);
+        User? user = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
+        GameStat? gameStat = await _gameStatRepository.GetSingleGameStatAsync(gameStatId);
+        GameStatResponseDTO gameStatCheck = SessionKeyClient.VerifyAccess(sessionKey, user, gameStat);
+        if (gameStatCheck.Error)
+        {
+            return gameStatCheck;
+        }
+
+        return new GameStatResponseDTO { ErrorMessage = await _gameStatRepository.DeleteGameStatAsync(gameStatId) };
     }
 
     public async Task<GameStatResponseDTO> UpdateGameStatAsync(GameStatSubmitDTO gameStatSubmit)

@@ -59,8 +59,16 @@ public class GameRepository : IGameRepository
         return game;
     }
 
-    public Task<string?> DeleteGameAsync(int gameId, int userId)
+    public async Task<string?> DeleteGameAsync(int gameId)
     {
-        throw new NotImplementedException();
+        Game? game = await _dbContext.Games.FindAsync(gameId);
+        if (game == null)
+        {
+            return "Invalid game id";
+        }
+
+        _dbContext.Games.Remove(game);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 }

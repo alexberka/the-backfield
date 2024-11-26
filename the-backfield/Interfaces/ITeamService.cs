@@ -9,5 +9,5 @@ public interface ITeamService
     Task<TeamResponseDTO> GetSingleTeamAsync(int teamId, string sessionKey);
     Task<TeamResponseDTO> CreateTeamAsync(TeamSubmitDTO teamSubmit);
     Task<TeamResponseDTO> UpdateTeamAsync(TeamSubmitDTO teamSubmit);
-    Task<Team> DeleteTeamAsync(int teamId, int userId);
+    Task<TeamResponseDTO> DeleteTeamAsync(int teamId, string sessionKey);
 }
