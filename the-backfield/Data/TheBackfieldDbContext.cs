@@ -26,7 +26,7 @@ public class TheBackfieldDbContext : DbContext
 
         modelBuilder.Entity<GameStat>()
             .HasOne<Game>()
-            .WithMany()
+            .WithMany(g => g.GameStats)
             .HasForeignKey(gs => gs.GameId);
 
         modelBuilder.Entity<GameStat>()

@@ -1,10 +1,11 @@
-﻿using TheBackfield.Models;
+﻿using TheBackfield.Interfaces;
+using TheBackfield.Models;
 
 namespace TheBackfield.DTOs
 {
     public class GameResponseDTO : ResponseDTO
     {
-        public Game? Game { get; set; }
-        public List<Game> Games { get; set; } = [];
+        public IGame? Game { get; set; }
+        public IEnumerable<IGame> Games { get; set; } = [];
     }
 }

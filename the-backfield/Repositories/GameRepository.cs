@@ -29,6 +29,7 @@ public class GameRepository : IGameRepository
             .AsNoTracking()
             .Include(g => g.HomeTeam)
             .Include(g => g.AwayTeam)
+            .Include(g => g.GameStats)
             .SingleOrDefaultAsync(g => g.Id == gameId);
     }
 
