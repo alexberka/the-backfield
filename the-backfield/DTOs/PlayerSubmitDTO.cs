@@ -1,3 +1,4 @@
+using TheBackfield.Interfaces;
 using TheBackfield.Models;
 
 namespace TheBackfield.DTOs;
@@ -19,7 +20,7 @@ public class PlayerSubmitDTO
     {
         if (player == null)
         {
-            player = new Player();
+            player = new TheBackfield.Models.Player();
         }
 
         Player mappedPlayer = new Player

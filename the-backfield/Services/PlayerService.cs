@@ -1,3 +1,4 @@
+using System.Numerics;
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
 using TheBackfield.Models;
@@ -33,8 +34,7 @@ public class PlayerService : IPlayerService
             return teamCheck.CastToPlayerResponseDTO();
         }
 
-        Player newPlayer = playerSubmit.MapToPlayer(user.Id);
-        Player addedPlayer = await _playerRepository.CreatePlayerAsync(newPlayer);
+        Player addedPlayer = await _playerRepository.CreatePlayerAsync(playerSubmit, user.Id);
 
         return new PlayerResponseDTO { Player = await _playerRepository.SetPlayerPositionsAsync(addedPlayer.Id, playerSubmit.PositionIds) };
     }
@@ -94,7 +94,11 @@ public class PlayerService : IPlayerService
             }
         }
 
-        Player updatedPlayer = playerSubmit.MapToPlayer(user.Id, player);
+        Player? updatedPlayer = await _playerRepository.UpdatePlayerAsync(playerSubmit);
+        if (updatedPlayer == null)
+        {
+            return new PlayerResponseDTO { NotFound = true, ErrorMessage = "Invalid player id" };
+        }
 
         return new PlayerResponseDTO { Player = await _playerRepository.SetPlayerPositionsAsync(updatedPlayer.Id, playerSubmit.PositionIds) };
     }

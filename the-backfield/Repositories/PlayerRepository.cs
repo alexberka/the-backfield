@@ -1,3 +1,4 @@
+using System.Numerics;
 using Microsoft.EntityFrameworkCore;
 using TheBackfield.Data;
 using TheBackfield.DTOs;
@@ -15,8 +16,20 @@ public class PlayerRepository : IPlayerRepository
         _dbContext = context;
     }
 
-    public async Task<Player> CreatePlayerAsync(Player newPlayer)
+    public async Task<Player> CreatePlayerAsync(PlayerSubmitDTO playerSubmit, int userId)
     {
+        Player newPlayer = new Player
+        {
+            FirstName = playerSubmit.FirstName ?? "",
+            LastName = playerSubmit.LastName ?? "",
+            ImageUrl = playerSubmit.ImageUrl ?? "",
+            BirthDate = playerSubmit.BirthDate ?? DateTime.MinValue,
+            Hometown = playerSubmit.Hometown ?? "",
+            TeamId = playerSubmit.TeamId,
+            JerseyNumber = playerSubmit.JerseyNumber ?? 0,
+            UserId = userId
+        };
+
         _dbContext.Players.Add(newPlayer);
         await _dbContext.SaveChangesAsync();
         return newPlayer;
@@ -52,24 +65,24 @@ public class PlayerRepository : IPlayerRepository
             .SingleOrDefaultAsync(p => p.Id == playerId);
     }
 
-    public async Task<Player?> UpdatePlayerAsync(Player updatedPlayer)
+    public async Task<Player?> UpdatePlayerAsync(PlayerSubmitDTO playerSubmit)
     {
-        /*Player? currentPlayer = await _dbContext.Players.SingleOrDefaultAsync(p => p.Id == updatedPlayer.Id);
+        Player? currentPlayer = await _dbContext.Players.SingleOrDefaultAsync(p => p.Id == playerSubmit.Id);
         if (currentPlayer == null)
         {
             return null;
         }
 
-        currentPlayer.FirstName = updatedPlayer.FirstName;
-        currentPlayer.LastName = updatedPlayer.LastName;
-        currentPlayer.ImageUrl = updatedPlayer.ImageUrl;
-        currentPlayer.BirthDate = updatedPlayer.BirthDate;
-        currentPlayer.Hometown = updatedPlayer.Hometown;
-        currentPlayer.TeamId = updatedPlayer.TeamId;
-        currentPlayer.JerseyNumber = updatedPlayer.JerseyNumber;*/
-        _dbContext.Update(updatedPlayer);
+        currentPlayer.FirstName = playerSubmit.FirstName ?? currentPlayer.FirstName;
+        currentPlayer.LastName = playerSubmit.LastName ?? currentPlayer.LastName;
+        currentPlayer.ImageUrl = playerSubmit.ImageUrl ?? playerSubmit.ImageUrl;
+        currentPlayer.BirthDate = playerSubmit.BirthDate ?? currentPlayer.BirthDate;
+        currentPlayer.Hometown = playerSubmit.Hometown ?? currentPlayer.Hometown;
+        currentPlayer.TeamId = playerSubmit.TeamId != 0 ? playerSubmit.TeamId : currentPlayer.TeamId;
+        currentPlayer.JerseyNumber = playerSubmit.JerseyNumber ?? currentPlayer.JerseyNumber;
+        
         await _dbContext.SaveChangesAsync();
-        return updatedPlayer;
+        return currentPlayer;
     }
 
     public async Task<Player?> SetPlayerPositionsAsync(int playerId, List<int> positionIds)
