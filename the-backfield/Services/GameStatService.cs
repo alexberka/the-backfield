@@ -11,15 +11,13 @@ public class GameStatService : IGameStatService
     private readonly IGameStatRepository _gameStatRepository;
     private readonly IGameRepository _gameRepository;
     private readonly IPlayerRepository _playerRepository;
-    private readonly ITeamRepository _teamRepository;
     private readonly IUserRepository _userRepository;
 
-    public GameStatService(IGameStatRepository gameStatRepository, IGameRepository gameRepository, IPlayerRepository playerRepository, ITeamRepository teamRepository, IUserRepository userRepository)
+    public GameStatService(IGameStatRepository gameStatRepository, IGameRepository gameRepository, IPlayerRepository playerRepository, IUserRepository userRepository)
     {
         _gameStatRepository = gameStatRepository;
         _gameRepository = gameRepository;
         _playerRepository = playerRepository;
-        _teamRepository = teamRepository;
         _userRepository = userRepository;
     }
 
@@ -47,7 +45,7 @@ public class GameStatService : IGameStatService
             return new GameStatResponseDTO { ErrorMessage = "Player Id is not valid for this team" };
         }
 
-        return new GameStatResponseDTO { GameStat = await _gameStatRepository.CreateGameStatAsync(gameStatSubmit.MapToGameStat(user.Id)) };
+        return new GameStatResponseDTO { GameStat = await _gameStatRepository.CreateGameStatAsync(gameStatSubmit, user.Id) };
     }
 
     public async Task<GameStatResponseDTO> DeleteGameStatAsync(int gameStatId, string sessionKey)
@@ -86,8 +84,6 @@ public class GameStatService : IGameStatService
             return new GameStatResponseDTO { ErrorMessage = "Game stat record cannot be reassigned to a different player. Instead, delete record and create a new one with the proper association." };
         }
 
-        GameStat updatedGameStat = gameStatSubmit.MapToGameStat(user.Id, gameStat);
-
-        return new GameStatResponseDTO { GameStat = await _gameStatRepository.UpdateGameStatAsync(updatedGameStat) };
+        return new GameStatResponseDTO { GameStat = await _gameStatRepository.UpdateGameStatAsync(gameStatSubmit) };
     }
 }
