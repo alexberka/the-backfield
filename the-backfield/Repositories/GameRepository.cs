@@ -33,28 +33,40 @@ public class GameRepository : IGameRepository
             .SingleOrDefaultAsync(g => g.Id == gameId);
     }
 
-    public async Task<Game> CreateGameAsync(Game newGame)
+    public async Task<Game> CreateGameAsync(GameSubmitDTO newGameSubmit, int userId)
     {
+        Game newGame = new Game
+        {
+            HomeTeamId = newGameSubmit.HomeTeamId,
+            HomeTeamScore = newGameSubmit.HomeTeamScore ?? 0,
+            AwayTeamId = newGameSubmit.AwayTeamId,
+            AwayTeamScore = newGameSubmit.AwayTeamScore ?? 0,
+            GameStart = newGameSubmit.GameStart ?? DateTime.MinValue,
+            GamePeriods = newGameSubmit.GamePeriods ?? 1,
+            PeriodLength = newGameSubmit.PeriodLength ?? 0,
+            UserId = userId,
+        };
+
         _dbContext.Games.Add(newGame);
         await _dbContext.SaveChangesAsync();
         return newGame;
     }
 
-    public async Task<Game?> UpdateGameAsync(Game updatedGame)
+    public async Task<Game?> UpdateGameAsync(GameSubmitDTO updatedGameSubmit)
     {
-        Game? game = await _dbContext.Games.FindAsync(updatedGame.Id);
+        Game? game = await _dbContext.Games.FindAsync(updatedGameSubmit.Id);
         if (game == null)
         {
             return null;
         }
 
-        game.HomeTeamId = updatedGame.HomeTeamId;
-        game.HomeTeamScore = updatedGame.HomeTeamScore;
-        game.AwayTeamId = updatedGame.AwayTeamId;
-        game.AwayTeamScore = updatedGame.AwayTeamScore;
-        game.GameStart = updatedGame.GameStart;
-        game.GamePeriods = updatedGame.GamePeriods;
-        game.PeriodLength = updatedGame.PeriodLength;
+        game.HomeTeamId = updatedGameSubmit.HomeTeamId != 0 ? updatedGameSubmit.HomeTeamId : game.HomeTeamId;
+        game.HomeTeamScore = updatedGameSubmit.HomeTeamScore ?? game.HomeTeamScore;
+        game.AwayTeamId = updatedGameSubmit.AwayTeamId != 0 ? updatedGameSubmit.AwayTeamId : game.AwayTeamId;
+        game.AwayTeamScore = updatedGameSubmit.AwayTeamScore ?? game.AwayTeamScore;
+        game.GameStart = updatedGameSubmit.GameStart ?? game.GameStart;
+        game.GamePeriods = updatedGameSubmit.GamePeriods ?? game.GamePeriods;
+        game.PeriodLength = updatedGameSubmit.PeriodLength ?? game.PeriodLength;
 
         await _dbContext.SaveChangesAsync();
         return game;

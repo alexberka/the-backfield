@@ -45,7 +45,7 @@ public class GameService : IGameService
             return teamCheck.CastToGameResponseDTO();
         }
 
-        return new GameResponseDTO { Game = await _gameRepository.CreateGameAsync(gameSubmit.MapToGame(user.Id)) };
+        return new GameResponseDTO { Game = await _gameRepository.CreateGameAsync(gameSubmit, user.Id) };
     }
 
     public async Task<GameResponseDTO> DeleteGameAsync(int gameId, string sessionKey)
@@ -88,27 +88,31 @@ public class GameService : IGameService
             return gameCheck;
         }
 
-        Game updatedGame = gameSubmit.MapToGame(user.Id, game);
-
-        if (updatedGame.HomeTeamId == updatedGame.AwayTeamId)
+        if ((gameSubmit.HomeTeamId != 0 ? gameSubmit.HomeTeamId : game.HomeTeamId) == (gameSubmit.AwayTeamId != 0 ? gameSubmit.AwayTeamId : game.AwayTeamId))
         {
             return new GameResponseDTO { ErrorMessage = "Home team and away team cannot be identical" };
         }
 
-        Team? homeTeam = await _teamRepository.GetSingleTeamAsync(updatedGame.HomeTeamId);
-        TeamResponseDTO teamCheck = SessionKeyClient.VerifyAccess(gameSubmit.SessionKey, user, homeTeam);
-        if (teamCheck.Error)
+        if (gameSubmit.HomeTeamId != 0 && gameSubmit.HomeTeamId != game.HomeTeamId)
         {
-            return teamCheck.CastToGameResponseDTO();
+            Team? homeTeam = await _teamRepository.GetSingleTeamAsync(gameSubmit.HomeTeamId);
+            TeamResponseDTO teamCheck = SessionKeyClient.VerifyAccess(gameSubmit.SessionKey, user, homeTeam);
+            if (teamCheck.Error)
+            {
+                return teamCheck.CastToGameResponseDTO();
+            }
         }
 
-        Team? awayTeam = await _teamRepository.GetSingleTeamAsync(updatedGame.AwayTeamId);
-        teamCheck = SessionKeyClient.VerifyAccess(gameSubmit.SessionKey, user, awayTeam);
-        if (teamCheck.Error)
+        if (gameSubmit.AwayTeamId != 0 && gameSubmit.AwayTeamId != game.AwayTeamId)
         {
-            return teamCheck.CastToGameResponseDTO();
+            Team? awayTeam = await _teamRepository.GetSingleTeamAsync(gameSubmit.AwayTeamId);
+            TeamResponseDTO teamCheck = SessionKeyClient.VerifyAccess(gameSubmit.SessionKey, user, awayTeam);
+            if (teamCheck.Error)
+            {
+                return teamCheck.CastToGameResponseDTO();
+            }
         }
 
-        return new GameResponseDTO { Game = await _gameRepository.UpdateGameAsync(updatedGame) };
+        return new GameResponseDTO { Game = await _gameRepository.UpdateGameAsync(gameSubmit) };
     }
 }
