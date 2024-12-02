@@ -176,4 +176,4 @@ For complete endpoint documentation, visit [The Backfield Documentation on Postm
 
 [The Backfield repository on GitHub](github.com/alexberka/the-backfield)
 [ERD on dbdiagram](https://dbdiagram.io/d/The-Backfield-6732a4d0e9daa85aca1861f6)
-[Operational Walk-Through on YouTube]()
+[Operational Walk-Through on YouTube](https://www.youtube.com/watch?v=bem_ITHckJQ)
