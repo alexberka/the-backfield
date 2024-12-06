@@ -68,6 +68,7 @@ public class Game : IGame
     public int PeriodLength { get; set; }
     [JsonIgnore]
     public List<GameStat> GameStats { get; set; } = [];
+    public List<Play> Plays { get; set; } = [];
     [Required]
     public int UserId { get; set; }
 }
