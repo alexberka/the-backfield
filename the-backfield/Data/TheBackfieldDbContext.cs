@@ -51,6 +51,7 @@ public class TheBackfieldDbContext : DbContext
             .WithMany()
             .HasForeignKey(gs => gs.PlayerId);
 
+        modelBuilder.Entity<Penalty>().HasData(PenaltyData.Penalties);
         modelBuilder.Entity<Position>().HasData(PositionData.Positions);
     }
 }

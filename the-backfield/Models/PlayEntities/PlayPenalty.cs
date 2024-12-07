@@ -18,6 +18,7 @@ namespace TheBackfield.Models.PlayEntities
         public bool Enforced { get; set; } = true;
         public int EnforcedFrom { get; set; }
         public bool NoPlay { get; set; }
+        public bool LossOfDown { get; set; }
         public bool AutoFirstDown { get; set; }
         public int Yardage { get; set; } // Penalty yardage provided as positive value
     }
