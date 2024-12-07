@@ -86,6 +86,8 @@ app.UseHttpsRedirection();
 
 app.MapGameEndpoints();
 app.MapGameStatEndpoints();
+app.MapPenaltyEndpoints();
+app.MapPlayEndpoints();
 app.MapPlayerEndpoints();
 app.MapPositionEndpoints();
 app.MapTeamEndpoints();
