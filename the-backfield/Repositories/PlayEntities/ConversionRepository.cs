@@ -6,7 +6,7 @@ namespace TheBackfield.Repositories.PlayEntities;
 
 public class ConversionRepository : IConversionRepository
 {
-    public Task<Conversion?> CreateConversionAsync(PlaySubmitDTO playSubmit, int userId)
+    public Task<Conversion?> CreateConversionAsync(PlaySubmitDTO playSubmit)
     {
         throw new NotImplementedException();
     }

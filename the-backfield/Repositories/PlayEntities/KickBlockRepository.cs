@@ -6,7 +6,7 @@ namespace TheBackfield.Repositories.PlayEntities;
 
 public class KickBlockRepository : IKickBlockRepository
 {
-    public Task<KickBlock?> CreateKickBlockAsync(PlaySubmitDTO playSubmit, int userId)
+    public Task<KickBlock?> CreateKickBlockAsync(PlaySubmitDTO playSubmit)
     {
         throw new NotImplementedException();
     }

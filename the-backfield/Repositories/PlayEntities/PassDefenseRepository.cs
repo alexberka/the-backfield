@@ -5,7 +5,7 @@ namespace TheBackfield.Repositories.PlayEntities;
 
 public class PassDefenseRepository : IPassDefenseRepository
 {
-    public Task<PassDefense?> CreatePassDefenseAsync(int playId, int defenderId, int userId)
+    public Task<PassDefense?> CreatePassDefenseAsync(int playId, int defenderId)
     {
         throw new NotImplementedException();
     }

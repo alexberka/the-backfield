@@ -6,7 +6,7 @@ namespace TheBackfield.Repositories.PlayEntities;
 
 public class InterceptionRepository : IInterceptionRepository
 {
-    public Task<Interception?> CreateInterceptionAsync(PlaySubmitDTO playSubmit, int userId)
+    public Task<Interception?> CreateInterceptionAsync(PlaySubmitDTO playSubmit)
     {
         throw new NotImplementedException();
     }

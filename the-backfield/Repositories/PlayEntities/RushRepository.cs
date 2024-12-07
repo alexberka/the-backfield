@@ -6,7 +6,7 @@ namespace TheBackfield.Repositories.PlayEntities;
 
 public class RushRepository : IRushRepository
 {
-    public Task<Rush?> CreateRushAsync(PlaySubmitDTO playSubmit, int userId)
+    public Task<Rush?> CreateRushAsync(PlaySubmitDTO playSubmit)
     {
         throw new NotImplementedException();
     }

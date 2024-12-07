@@ -6,7 +6,7 @@ namespace TheBackfield.Repositories.PlayEntities;
 
 public class ExtraPointRepository : IExtraPointRepository
 {
-    public Task<ExtraPoint?> CreateExtraPointAsync(PlaySubmitDTO playSubmit, int userId)
+    public Task<ExtraPoint?> CreateExtraPointAsync(PlaySubmitDTO playSubmit)
     {
         throw new NotImplementedException();
     }

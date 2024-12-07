@@ -6,7 +6,7 @@ namespace TheBackfield.Interfaces.PlayEntities;
 public interface IInterceptionRepository
 {
     Task<Interception?> GetSingleInterceptionAsync(int interceptionId);
-    Task<Interception?> CreateInterceptionAsync(PlaySubmitDTO playSubmit, int userId);
+    Task<Interception?> CreateInterceptionAsync(PlaySubmitDTO playSubmit);
     Task<Interception?> UpdateInterceptionAsync(PlaySubmitDTO playSubmit);
     Task<bool> DeleteInterceptionAsync(int interceptionId);
 }

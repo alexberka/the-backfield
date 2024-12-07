@@ -6,7 +6,7 @@ namespace TheBackfield.Repositories.PlayEntities;
 
 public class FieldGoalRepository : IFieldGoalRepository
 {
-    public Task<FieldGoal?> CreateFieldGoalAsync(PlaySubmitDTO playSubmit, int userId)
+    public Task<FieldGoal?> CreateFieldGoalAsync(PlaySubmitDTO playSubmit)
     {
         throw new NotImplementedException();
     }

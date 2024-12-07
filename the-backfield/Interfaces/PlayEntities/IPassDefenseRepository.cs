@@ -4,6 +4,6 @@ namespace TheBackfield.Interfaces.PlayEntities;
 
 public interface IPassDefenseRepository
 {
-    Task<PassDefense?> CreatePassDefenseAsync(int playId, int defenderId, int userId);
+    Task<PassDefense?> CreatePassDefenseAsync(int playId, int defenderId);
     Task<bool> DeletePassDefenseAsync(int passDefenseId);
 }

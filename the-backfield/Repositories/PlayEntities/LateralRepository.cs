@@ -6,7 +6,7 @@ namespace TheBackfield.Repositories.PlayEntities;
 
 public class LateralRepository : ILateralRepository
 {
-    public Task<Lateral?> CreateLateralAsync(LateralSubmitDTO lateralSubmit, int userId)
+    public Task<Lateral?> CreateLateralAsync(LateralSubmitDTO lateralSubmit)
     {
         throw new NotImplementedException();
     }

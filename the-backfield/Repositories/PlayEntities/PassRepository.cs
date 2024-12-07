@@ -6,7 +6,7 @@ namespace TheBackfield.Repositories.PlayEntities;
 
 public class PassRepository : IPassRepository
 {
-    public Task<Pass?> CreatePassAsync(PlaySubmitDTO playSubmit, int userId)
+    public Task<Pass?> CreatePassAsync(PlaySubmitDTO playSubmit)
     {
         throw new NotImplementedException();
     }

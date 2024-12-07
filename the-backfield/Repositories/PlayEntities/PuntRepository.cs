@@ -6,7 +6,7 @@ namespace TheBackfield.Repositories.PlayEntities;
 
 public class PuntRepository : IPuntRepository
 {
-    public Task<Punt?> CreatePuntAsync(PlaySubmitDTO playSubmit, int userId)
+    public Task<Punt?> CreatePuntAsync(PlaySubmitDTO playSubmit)
     {
         throw new NotImplementedException();
     }

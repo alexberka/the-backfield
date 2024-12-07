@@ -6,7 +6,7 @@ namespace TheBackfield.Repositories.PlayEntities;
 
 public class KickoffRepository : IKickoffRepository
 {
-    public Task<Kickoff?> CreateKickoffAsync(PlaySubmitDTO playSubmit, int userId)
+    public Task<Kickoff?> CreateKickoffAsync(PlaySubmitDTO playSubmit)
     {
         throw new NotImplementedException();
     }

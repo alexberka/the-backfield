@@ -6,7 +6,7 @@ namespace TheBackfield.Repositories
 {
     public class PlayRepository : IPlayRepository
     {
-        public Task<Play?> CreatePlayAsync(PlaySubmitDTO playSubmit, int userId)
+        public Task<Play?> CreatePlayAsync(PlaySubmitDTO playSubmit)
         {
             throw new NotImplementedException();
         }

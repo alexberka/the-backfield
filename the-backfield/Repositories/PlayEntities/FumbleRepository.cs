@@ -6,7 +6,7 @@ namespace TheBackfield.Repositories.PlayEntities;
 
 public class FumbleRepository : IFumbleRepository
 {
-    public Task<Fumble?> CreateFumbleAsync(FumbleSubmitDTO fumbleSubmit, int userId)
+    public Task<Fumble?> CreateFumbleAsync(FumbleSubmitDTO fumbleSubmit)
     {
         throw new NotImplementedException();
     }
