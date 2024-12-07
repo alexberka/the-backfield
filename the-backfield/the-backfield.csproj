@@ -19,7 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Repositories\" />
+    <Folder Include="DTOs\PlayEntities\" />
+    <Folder Include="Interfaces\PlayEntities\" />
   </ItemGroup>
 
 </Project>

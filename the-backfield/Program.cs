@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Http.Json;
 using TheBackfield.Data;
 using TheBackfield.Endpoints;
 using TheBackfield.Interfaces;
+using TheBackfield.Interfaces.PlayEntities;
 using TheBackfield.Repositories;
+using TheBackfield.Repositories.PlayEntities;
 using TheBackfield.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +24,27 @@ builder.Services.AddScoped<IGameRepository, GameRepository>();
 
 builder.Services.AddScoped<IGameStatService, GameStatService>();
 builder.Services.AddScoped<IGameStatRepository, GameStatRepository>();
+
+builder.Services.AddScoped<IPenaltyService, PenaltyService>();
+builder.Services.AddScoped<IPenaltyRepository, PenaltyRepository>();
+
+builder.Services.AddScoped<IPlayService, PlayService>();
+builder.Services.AddScoped<IPlayRepository, PlayRepository>();
+
+builder.Services.AddScoped<IConversionRepository, ConversionRepository>();
+builder.Services.AddScoped<IExtraPointRepository, ExtraPointRepository>();
+builder.Services.AddScoped<IFieldGoalRepository, FieldGoalRepository>();
+builder.Services.AddScoped<IFumbleRepository, FumbleRepository>();
+builder.Services.AddScoped<IInterceptionRepository, InterceptionRepository>();
+builder.Services.AddScoped<IKickBlockRepository, KickBlockRepository>();
+builder.Services.AddScoped<IKickoffRepository, KickoffRepository>();
+builder.Services.AddScoped<ILateralRepository, LateralRepository>();
+builder.Services.AddScoped<IPassDefenseRepository, PassDefenseRepository>();
+builder.Services.AddScoped<IPassRepository, PassRepository>();
+builder.Services.AddScoped<IPlayPenaltyRepository, PlayPenaltyRepository>();
+builder.Services.AddScoped<IPuntRepository, PuntRepository>();
+builder.Services.AddScoped<IRushRepository, RushRepository>();
+builder.Services.AddScoped<ITackleRepository, TackleRepository>();
 
 builder.Services.AddScoped<IPlayerService, PlayerService>();
 builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
