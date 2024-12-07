@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace TheBackfield.Models.PlayEntities
+namespace TheBackfield.Models
 {
     public class Penalty
     {
@@ -10,5 +10,7 @@ namespace TheBackfield.Models.PlayEntities
         public bool NoPlay { get; set; }
         public bool AutoFirstDown { get; set; }
         public int Yardage { get; set; } = 0;
+        [Required]
+        public int UserId { get; set; }
     }
 }
