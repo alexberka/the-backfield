@@ -1,4 +1,6 @@
-﻿using TheBackfield.DTOs;
+﻿using Microsoft.EntityFrameworkCore;
+using TheBackfield.Data;
+using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
 using TheBackfield.Models;
 
@@ -6,6 +8,12 @@ namespace TheBackfield.Repositories
 {
     public class PenaltyRepository : IPenaltyRepository
     {
+        private readonly TheBackfieldDbContext _dbContext;
+
+        public PenaltyRepository(TheBackfieldDbContext context)
+        {
+            _dbContext = context;
+        }
         public Task<Penalty?> CreatePenaltyAsync(PenaltySubmitDTO penaltySubmit, int userId)
         {
             throw new NotImplementedException();
@@ -16,9 +24,9 @@ namespace TheBackfield.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<List<Penalty>> GetAllPenaltiesAsync(int userId)
+        public async Task<List<Penalty>> GetAllPenaltiesAsync(int userId)
         {
-            throw new NotImplementedException();
+            return await _dbContext.Penalties.Where(p => p.UserId == null || p.UserId == userId).ToListAsync();
         }
 
         public Task<Penalty?> GetSinglePenaltyAsync(int penaltyId)

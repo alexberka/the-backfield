@@ -13,7 +13,8 @@ public class PlayPenaltySubmitDTO
     public int? TeamId { get; set; } = null;
     public bool Enforced { get; set; } = true;
     public int? EnforcedFrom { get; set; } = null;
-    public bool NoPlay { get; set; } = false;
+    public bool NoPlay { get; set; } = true;
+    public bool LossOfDown { get; set; } = false;
     public bool AutoFirstDown { get; set; } = false;
     public int? Yardage { get; set; } = null; // Penalty yardage provided as positive value
 }
