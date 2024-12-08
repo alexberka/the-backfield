@@ -8,8 +8,7 @@ namespace TheBackfield.Models
         public int Id { get; set; }
         public int? PrevPlayId { get; set; } = null;
         public Play? PrevPlay { get; set; }
-        [Required]
-        public int GameId { get; set; }
+        public int? GameId { get; set; } = null;
         public Game Game { get; set; }
         public int? FieldPositionStart { get; set; } = null;
         public int? FieldPositionEnd { get; set; } = null;
