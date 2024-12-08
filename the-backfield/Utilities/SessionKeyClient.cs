@@ -119,5 +119,22 @@ namespace TheBackfield.Utilities
             }
             return new GameStatResponseDTO { GameStat = gameStat };
         }
+
+        public static PlayResponseDTO VerifyAccess(string sessionKey, User? user, Play? play)
+        {
+            if (play == null)
+            {
+                return new PlayResponseDTO { NotFound = true, ErrorMessage = "Invalid play id" };
+            }
+            if (user == null || user.SessionKey != sessionKey)
+            {
+                return new PlayResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+            }
+            if (play.Game == null || play.Game.UserId != user.Id)
+            {
+                return new PlayResponseDTO { Forbidden = true, ErrorMessage = "User lacks permissions to access this game" };
+            }
+            return new PlayResponseDTO { Play = play };
+        }
     }
 }

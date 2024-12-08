@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using TheBackfield.Models.PlayEntities;
+﻿using TheBackfield.Models.PlayEntities;
 
 namespace TheBackfield.Models
 {
@@ -8,15 +7,17 @@ namespace TheBackfield.Models
         public int Id { get; set; }
         public int? PrevPlayId { get; set; } = null;
         public Play? PrevPlay { get; set; }
-        [Required]
-        public int GameId { get; set; }
+        public int? GameId { get; set; } = null;
         public Game Game { get; set; }
+        public int? TeamId { get; set; } = null;
+        public Team Team { get; set; }
         public int? FieldPositionStart { get; set; } = null;
         public int? FieldPositionEnd { get; set; } = null;
         public int Down { get; set; } = 0;
         public int? ToGain { get; set; } = null;
         public int? ClockStart { get; set; } = null;
         public int? ClockEnd { get; set; } = null;
+        public int? GamePeriod { get; set; } = null;
         public string Notes { get; set; } = "";
         public Pass? Pass { get; set; }
         public Rush? Rush { get; set; }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TheBackfield.Data;
@@ -11,9 +12,10 @@ using TheBackfield.Data;
 namespace the_backfield.Migrations
 {
     [DbContext(typeof(TheBackfieldDbContext))]
-    partial class TheBackfieldDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241208011222_InitialPlay")]
+    partial class InitialPlay
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -601,17 +603,11 @@ namespace the_backfield.Migrations
                     b.Property<int?>("GameId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("GamePeriod")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Notes")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int?>("PrevPlayId")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("TeamId")
                         .HasColumnType("integer");
 
                     b.Property<int?>("ToGain")
@@ -622,8 +618,6 @@ namespace the_backfield.Migrations
                     b.HasIndex("GameId");
 
                     b.HasIndex("PrevPlayId");
-
-                    b.HasIndex("TeamId");
 
                     b.ToTable("Plays");
 
@@ -1472,15 +1466,9 @@ namespace the_backfield.Migrations
                         .WithMany()
                         .HasForeignKey("PrevPlayId");
 
-                    b.HasOne("TheBackfield.Models.Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamId");
-
                     b.Navigation("Game");
 
                     b.Navigation("PrevPlay");
-
-                    b.Navigation("Team");
                 });
 
             modelBuilder.Entity("TheBackfield.Models.PlayEntities.Conversion", b =>

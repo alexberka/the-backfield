@@ -10,12 +10,15 @@ namespace TheBackfield.DTOs
         public int PrevPlayId { get; set; } // Reserve 1 for Game Start
         [Required]
         public int GameId { get; set; }
+        [Required]
+        public int TeamId { get; set; }
         public int? FieldPositionStart { get; set; } = null;
         public int? FieldPositionEnd { get; set; } = null;
         public int Down { get; set; } = 0;
         public int? ToGain { get; set; } = null;
         public int? ClockStart { get; set; } = null;
         public int? ClockEnd { get; set; } = null;
+        public int? GamePeriod { get; set; } = null;
         public string Notes { get; set; } = "";
         public int? PasserId { get; set; } = null;
         public int? ReceiverId { get; set; } = null;

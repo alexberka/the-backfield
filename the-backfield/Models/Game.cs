@@ -64,8 +64,8 @@ public class Game : IGame
         }
     }
     public DateTime GameStart { get; set; }
-    public int GamePeriods { get; set; }
-    public int PeriodLength { get; set; }
+    public int GamePeriods { get; set; } = 4;
+    public int PeriodLength { get; set; } = 900;
     [JsonIgnore]
     public List<GameStat> GameStats { get; set; } = [];
     public List<Play> Plays { get; set; } = [];
