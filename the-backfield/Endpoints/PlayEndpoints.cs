@@ -22,5 +22,31 @@ public static class PlayEndpoints
         })
             .WithOpenApi()
             .Produces<Play>(StatusCodes.Status200OK);
+
+        group.MapPost("/plays", async (IPlayService playService, PlaySubmitDTO playSubmit) =>
+        {
+            PlayResponseDTO response = await playService.CreatePlayAsync(playSubmit);
+            if (response.Error || response.Play == null)
+            {
+                return response.ThrowError();
+            }
+
+            return Results.Created($"/plays/{response.Play.Id}", response.Play);
+        })
+            .WithOpenApi()
+            .Produces<Play>(StatusCodes.Status201Created);
+
+        group.MapDelete("/plays/{playId}", async (IPlayService playService, int playId, string sessionKey) =>
+        {
+            PlayResponseDTO response = await playService.DeletePlayAsync(playId, sessionKey);
+            if (response.Error)
+            {
+                return response.ThrowError();
+            }
+
+            return Results.NoContent();
+        })
+            .WithOpenApi()
+            .Produces(StatusCodes.Status204NoContent);
     }
 }

@@ -12,8 +12,8 @@ public class GameSubmitDTO
     public int AwayTeamId { get; set; } = 0;
     public int? AwayTeamScore { get; set; }
     public DateTime? GameStart { get; set; }
-    public int? GamePeriods { get; set; }
-    public int? PeriodLength { get; set; }
+    public int? GamePeriods { get; set; } = 4;
+    public int? PeriodLength { get; set; } = 900;
     public string? SessionKey { get; set; }
     /// <summary>
     /// 

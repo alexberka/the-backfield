@@ -15,14 +15,58 @@ namespace TheBackfield.Repositories
             _dbContext = context;
         }
 
-        public Task<Play?> CreatePlayAsync(PlaySubmitDTO playSubmit)
+        public async Task<Play?> CreatePlayAsync(PlaySubmitDTO playSubmit)
         {
-            throw new NotImplementedException();
+            Play? playAfter = await _dbContext.Plays.SingleOrDefaultAsync(p => p.PrevPlayId == playSubmit.PrevPlayId && p.GameId == playSubmit.GameId);
+
+            Play newPlay = new()
+            {
+                PrevPlayId = playSubmit.PrevPlayId,
+                GameId = playSubmit.GameId,
+                FieldPositionStart = playSubmit.FieldPositionStart,
+                FieldPositionEnd = playSubmit.FieldPositionEnd,
+                Down = playSubmit.Down,
+                ToGain = playSubmit.ToGain,
+                ClockStart = playSubmit.ClockStart,
+                ClockEnd = playSubmit.ClockEnd,
+                GamePeriod = playSubmit.GamePeriod,
+                Notes = playSubmit.Notes
+            };
+
+            _dbContext.Plays.Add(newPlay);
+
+            await _dbContext.SaveChangesAsync();
+
+            if (playAfter != null)
+            {
+                playAfter.PrevPlayId = newPlay.Id;
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            return newPlay;
         }
 
-        public Task<string?> DeletePlayAsync(int playId)
+        public async Task<string?> DeletePlayAsync(int playId)
         {
-            throw new NotImplementedException();
+            Play? playToDelete = await _dbContext.Plays.FindAsync(playId);
+
+            if (playToDelete == null)
+            {
+                return "Invalid play id";
+            }
+
+            Play? subsequentPlay = await _dbContext.Plays.SingleOrDefaultAsync(p => p.PrevPlayId == playId);
+
+            if (subsequentPlay != null)
+            {
+                subsequentPlay.PrevPlayId = playToDelete.PrevPlayId;
+            }
+
+            _dbContext.Plays.Remove(playToDelete);
+            await _dbContext.SaveChangesAsync();
+
+            return null;
         }
 
         public async Task<Play?> GetSinglePlayAsync(int playId)
