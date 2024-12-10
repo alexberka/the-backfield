@@ -8,13 +8,12 @@ namespace TheBackfield.Models.PlayEntities
         [Required]
         public int PlayId { get; set; }
         public Play Play { get; set; }
-        [Required]
-        public int FumbleCommittedById { get; set; }
+        public int? FumbleCommittedById { get; set; } = null;
         public Player FumbleCommittedBy { get; set; }
         public int FumbledAt { get; set; }
-        public int? FumbleForcedById { get; set; }
+        public int? FumbleForcedById { get; set; } = null;
         public Player? FumbleForcedBy { get; set; }
-        public int? FumbleRecoveredById { get; set; }
+        public int? FumbleRecoveredById { get; set; } = null;
         public Player? FumbleRecoveredBy { get; set; }
         public int RecoveredAt { get; set; }
     }
