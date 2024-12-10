@@ -23,6 +23,7 @@ namespace TheBackfield.Repositories
             {
                 PrevPlayId = playSubmit.PrevPlayId,
                 GameId = playSubmit.GameId,
+                TeamId = playSubmit.TeamId,
                 FieldPositionStart = playSubmit.FieldPositionStart,
                 FieldPositionEnd = playSubmit.FieldPositionEnd,
                 Down = playSubmit.Down,

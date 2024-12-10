@@ -51,6 +51,15 @@ public class TheBackfieldDbContext : DbContext
             .WithMany()
             .HasForeignKey(gs => gs.PlayerId);
 
+        modelBuilder.Entity<Pass>()
+            .HasOne(p => p.Passer)
+            .WithMany()
+            .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<Pass>()
+            .HasOne(p => p.Receiver)
+            .WithMany()
+            .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<Penalty>().HasData(PenaltyData.Penalties);
         modelBuilder.Entity<Play>().HasData(PlayData.Plays);
         modelBuilder.Entity<Position>().HasData(PositionData.Positions);
