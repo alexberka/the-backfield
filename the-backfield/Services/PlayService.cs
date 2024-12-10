@@ -1,6 +1,8 @@
 ﻿using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
+using TheBackfield.Interfaces.PlayEntities;
 using TheBackfield.Models;
+using TheBackfield.Models.PlayEntities;
 using TheBackfield.Utilities;
 
 namespace TheBackfield.Services
@@ -8,17 +10,23 @@ namespace TheBackfield.Services
     public class PlayService : IPlayService
     {
         private readonly IPlayRepository _playRepository;
+        private readonly IPassRepository _passRepository;
         private readonly IGameRepository _gameRepository;
+        private readonly IPlayerRepository _playerRepository;
         private readonly IUserRepository _userRepository;
 
         public PlayService(
             IPlayRepository playRepository,
+            IPassRepository passRepository,
             IGameRepository gameRepository,
+            IPlayerRepository playerRepository,
             IUserRepository userRepository
             )
         {
             _playRepository = playRepository;
+            _passRepository = passRepository;
             _gameRepository = gameRepository;
+            _playerRepository = playerRepository;
             _userRepository = userRepository;
         }
 
@@ -71,7 +79,54 @@ namespace TheBackfield.Services
                 return new PlayResponseDTO { ErrorMessage = $"GamePeriod must be a number between 1 and the total number of game periods for this game ({game.GamePeriods})" };
             }
 
-            return new PlayResponseDTO { Play = await _playRepository.CreatePlayAsync(playSubmit) };
+            // Validate Pass data, if PasserId is defined
+            if (playSubmit.PasserId != null)
+            {
+                Player? passer = await _playerRepository.GetSinglePlayerAsync(playSubmit.PasserId ?? 0);
+                if (passer == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "PasserId invalid" };
+                }
+                if (passer.TeamId != playSubmit.TeamId)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "PasserId invalid, player is not on this team" };
+                }
+
+                if (playSubmit.ReceiverId != null)
+                {
+                    Player? receiver = await _playerRepository.GetSinglePlayerAsync(playSubmit.ReceiverId ?? 0);
+                    if (receiver == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "ReceiverId invalid" };
+                    }
+                    if (receiver.TeamId != playSubmit.TeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "ReceiverId invalid, player is not on this team" };
+                    }
+                }
+            }
+
+            // Create Play
+            Play? createdPlay = await _playRepository.CreatePlayAsync(playSubmit);
+            if (createdPlay == null)
+            {
+                return new PlayResponseDTO();
+            }
+
+            playSubmit.Id = createdPlay.Id;
+
+            // Add auxiliary entities
+            // Create a Pass, if PasserId is defined
+            if (playSubmit.PasserId != null)
+            {
+                Pass? pass = await _passRepository.CreatePassAsync(playSubmit);
+                if (pass == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Pass failed to create" };
+                }
+            }
+
+            return new PlayResponseDTO { Play = createdPlay };
         }
 
         public async Task<PlayResponseDTO> DeletePlayAsync(int playId, string sessionKey)
