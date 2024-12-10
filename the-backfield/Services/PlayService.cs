@@ -14,6 +14,7 @@ namespace TheBackfield.Services
         private readonly IRushRepository _rushRepository;
         private readonly ITackleRepository _tackleRepository;
         private readonly IPassDefenseRepository _passDefenseRepository;
+        private readonly IKickoffRepository _kickoffRepository;
         private readonly IGameRepository _gameRepository;
         private readonly IPlayerRepository _playerRepository;
         private readonly IUserRepository _userRepository;
@@ -24,6 +25,7 @@ namespace TheBackfield.Services
             IRushRepository rushRepository,
             ITackleRepository tackleRepository,
             IPassDefenseRepository passDefenseRepository,
+            IKickoffRepository kickoffRepository,
             IGameRepository gameRepository,
             IPlayerRepository playerRepository,
             IUserRepository userRepository
@@ -34,6 +36,7 @@ namespace TheBackfield.Services
             _rushRepository = rushRepository;
             _tackleRepository = tackleRepository;
             _passDefenseRepository = passDefenseRepository;
+            _kickoffRepository = kickoffRepository;
             _gameRepository = gameRepository;
             _playerRepository = playerRepository;
             _userRepository = userRepository;
@@ -49,7 +52,9 @@ namespace TheBackfield.Services
                 return gameCheck.CastTo<PlayResponseDTO>();
             }
 
+            // Offensive (or kicking) team id
             int offensiveTeamId = playSubmit.TeamId;
+            // Defensive (or returning) team id
             int defensiveTeamId = playSubmit.TeamId == game.HomeTeamId ? game.AwayTeamId : game.HomeTeamId;
 
             if (playSubmit.TeamId != offensiveTeamId && playSubmit.TeamId != defensiveTeamId)
@@ -177,6 +182,45 @@ namespace TheBackfield.Services
                 }
             };
 
+            // Validate Kickoff data, if necessary
+            if (playSubmit.Kickoff)
+            {
+                if (playSubmit.PasserId != null || playSubmit.RusherId != null || playSubmit.FieldGoal || playSubmit.InterceptedById != null || playSubmit.Punt || playSubmit.PassDefenderIds.Count > 0)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Kickoff cannot occur on a play with pass, rush, field goal, interception, punt, or pass defense statistics" };
+                }
+                if (playSubmit.KickerId != null)
+                {
+                    Player? kicker = await _playerRepository.GetSinglePlayerAsync(playSubmit.KickerId ?? 0);
+                    if (kicker == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "KickerId invalid" };
+                    }
+                    if (kicker.TeamId != offensiveTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "KickerId invalid, player is not on kicking team" };
+                    }
+                }
+                if (playSubmit.KickReturnerId != null)
+                {
+                    Player? returner = await _playerRepository.GetSinglePlayerAsync(playSubmit.KickReturnerId ?? 0);
+                    if (returner == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "KickReturnerId invalid" };
+                    }
+                    if (returner.TeamId != defensiveTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "KickReturnerId invalid, player is not on return team" };
+                    }
+                }
+                if (Math.Abs(playSubmit.KickFieldedAt ?? 0) > 60)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "KickFieldedAt must be between -60 (back of home team endzone) and 60 (back of away team endzone)" };
+                }
+                playSubmit.Down = 0;
+            }
+
+
             // Create Play
             Play? createdPlay = await _playRepository.CreatePlayAsync(playSubmit);
             if (createdPlay == null)
@@ -193,7 +237,7 @@ namespace TheBackfield.Services
                 Pass? pass = await _passRepository.CreatePassAsync(playSubmit);
                 if (pass == null)
                 {
-                    return new PlayResponseDTO { ErrorMessage = "Pass failed to create" };
+                    return new PlayResponseDTO { ErrorMessage = "Pass failed to create, request terminated" };
                 }
             }
 
@@ -203,7 +247,7 @@ namespace TheBackfield.Services
                 Rush? rush = await _rushRepository.CreateRushAsync(playSubmit);
                 if (rush == null)
                 {
-                    return new PlayResponseDTO { ErrorMessage = "Rush failed to create" };
+                    return new PlayResponseDTO { ErrorMessage = "Rush failed to create, request terminated" };
                 }
             }
 
@@ -213,7 +257,7 @@ namespace TheBackfield.Services
                 Tackle? tackle = await _tackleRepository.CreateTackleAsync(createdPlay.Id, tacklerId);
                 if (tackle == null)
                 {
-                    return new PlayResponseDTO { ErrorMessage = $"Tackle for id {tacklerId} failed to create," };
+                    return new PlayResponseDTO { ErrorMessage = $"Tackle for id {tacklerId} failed to create, request terminated" };
                 }
             }
 
@@ -223,7 +267,17 @@ namespace TheBackfield.Services
                 PassDefense? passDefense = await _passDefenseRepository.CreatePassDefenseAsync(createdPlay.Id, defenderId);
                 if (passDefense == null)
                 {
-                    return new PlayResponseDTO { ErrorMessage = $"PassDefense for id {defenderId} failed to create," };
+                    return new PlayResponseDTO { ErrorMessage = $"PassDefense for id {defenderId} failed to create, request terminated" };
+                }
+            }
+
+            // Create Kickoff
+            if (playSubmit.Kickoff)
+            {
+                Kickoff? kickoff = await _kickoffRepository.CreateKickoffAsync(playSubmit);
+                if (kickoff == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Kickoff failed to create, request terminated" };
                 }
             }
 
