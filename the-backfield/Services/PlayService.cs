@@ -11,6 +11,7 @@ namespace TheBackfield.Services
     {
         private readonly IPlayRepository _playRepository;
         private readonly IPassRepository _passRepository;
+        private readonly IRushRepository _rushRepository;
         private readonly IGameRepository _gameRepository;
         private readonly IPlayerRepository _playerRepository;
         private readonly IUserRepository _userRepository;
@@ -18,6 +19,7 @@ namespace TheBackfield.Services
         public PlayService(
             IPlayRepository playRepository,
             IPassRepository passRepository,
+            IRushRepository rushRepository,
             IGameRepository gameRepository,
             IPlayerRepository playerRepository,
             IUserRepository userRepository
@@ -25,6 +27,7 @@ namespace TheBackfield.Services
         {
             _playRepository = playRepository;
             _passRepository = passRepository;
+            _rushRepository = rushRepository;
             _gameRepository = gameRepository;
             _playerRepository = playerRepository;
             _userRepository = userRepository;
@@ -79,6 +82,11 @@ namespace TheBackfield.Services
                 return new PlayResponseDTO { ErrorMessage = $"GamePeriod must be a number between 1 and the total number of game periods for this game ({game.GamePeriods})" };
             }
 
+            if (playSubmit.PasserId != null && playSubmit.RusherId != null)
+            {
+                return new PlayResponseDTO { ErrorMessage = "Play cannot be both a pass and a rush, and cannot contain both PasserId and RusherId" };
+            }
+
             // Validate Pass data, if PasserId is defined
             if (playSubmit.PasserId != null)
             {
@@ -106,6 +114,20 @@ namespace TheBackfield.Services
                 }
             }
 
+            // Validate Rush data, if RusherId is defined
+            if (playSubmit.RusherId != null)
+            {
+                Player? rusher = await _playerRepository.GetSinglePlayerAsync(playSubmit.RusherId ?? 0);
+                if (rusher == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "RusherId invalid" };
+                }
+                if (rusher.TeamId != playSubmit.TeamId)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "RusherId invalid, player is not on this team" };
+                }
+            }
+
             // Create Play
             Play? createdPlay = await _playRepository.CreatePlayAsync(playSubmit);
             if (createdPlay == null)
@@ -123,6 +145,16 @@ namespace TheBackfield.Services
                 if (pass == null)
                 {
                     return new PlayResponseDTO { ErrorMessage = "Pass failed to create" };
+                }
+            }
+
+            // Create a Pass, if PasserId is defined
+            if (playSubmit.RusherId != null)
+            {
+                Rush? rush = await _rushRepository.CreateRushAsync(playSubmit);
+                if (rush == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Rush failed to create" };
                 }
             }
 
