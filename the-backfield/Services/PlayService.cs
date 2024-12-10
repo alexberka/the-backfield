@@ -13,6 +13,7 @@ namespace TheBackfield.Services
         private readonly IPassRepository _passRepository;
         private readonly IRushRepository _rushRepository;
         private readonly ITackleRepository _tackleRepository;
+        private readonly IPassDefenseRepository _passDefenseRepository;
         private readonly IGameRepository _gameRepository;
         private readonly IPlayerRepository _playerRepository;
         private readonly IUserRepository _userRepository;
@@ -22,6 +23,7 @@ namespace TheBackfield.Services
             IPassRepository passRepository,
             IRushRepository rushRepository,
             ITackleRepository tackleRepository,
+            IPassDefenseRepository passDefenseRepository,
             IGameRepository gameRepository,
             IPlayerRepository playerRepository,
             IUserRepository userRepository
@@ -31,6 +33,7 @@ namespace TheBackfield.Services
             _passRepository = passRepository;
             _rushRepository = rushRepository;
             _tackleRepository = tackleRepository;
+            _passDefenseRepository = passDefenseRepository;
             _gameRepository = gameRepository;
             _playerRepository = playerRepository;
             _userRepository = userRepository;
@@ -46,7 +49,10 @@ namespace TheBackfield.Services
                 return gameCheck.CastTo<PlayResponseDTO>();
             }
 
-            if (playSubmit.TeamId != game.HomeTeamId && playSubmit.TeamId != game.AwayTeamId)
+            int offensiveTeamId = playSubmit.TeamId;
+            int defensiveTeamId = playSubmit.TeamId == game.HomeTeamId ? game.AwayTeamId : game.HomeTeamId;
+
+            if (playSubmit.TeamId != offensiveTeamId && playSubmit.TeamId != defensiveTeamId)
             {
                 return new PlayResponseDTO { ErrorMessage = $"Invalid team id, must correspond with home team (id #{game.HomeTeamId}) or away team (id #{game.AwayTeamId}) for this game" };
             }
@@ -87,7 +93,7 @@ namespace TheBackfield.Services
 
             if (playSubmit.PasserId != null && playSubmit.RusherId != null)
             {
-                return new PlayResponseDTO { ErrorMessage = "Play cannot be both a pass and a rush, and cannot contain both PasserId and RusherId" };
+                return new PlayResponseDTO { ErrorMessage = "Play cannot be both a pass and a rush, and cannot contain both non-null PasserId and RusherId" };
             }
 
             // Validate Pass data, if PasserId is defined
@@ -98,7 +104,7 @@ namespace TheBackfield.Services
                 {
                     return new PlayResponseDTO { ErrorMessage = "PasserId invalid" };
                 }
-                if (passer.TeamId != playSubmit.TeamId)
+                if (passer.TeamId != offensiveTeamId)
                 {
                     return new PlayResponseDTO { ErrorMessage = "PasserId invalid, player is not on this team" };
                 }
@@ -110,7 +116,7 @@ namespace TheBackfield.Services
                     {
                         return new PlayResponseDTO { ErrorMessage = "ReceiverId invalid" };
                     }
-                    if (receiver.TeamId != playSubmit.TeamId)
+                    if (receiver.TeamId != offensiveTeamId)
                     {
                         return new PlayResponseDTO { ErrorMessage = "ReceiverId invalid, player is not on this team" };
                     }
@@ -125,23 +131,49 @@ namespace TheBackfield.Services
                 {
                     return new PlayResponseDTO { ErrorMessage = "RusherId invalid" };
                 }
-                if (rusher.TeamId != playSubmit.TeamId)
+                if (rusher.TeamId != offensiveTeamId)
                 {
                     return new PlayResponseDTO { ErrorMessage = "RusherId invalid, player is not on this team" };
                 }
             }
 
-            // Validate Tackle data
+            // Validate Tackle data, remove duplicates
+            List<int> tacklesToCreate = [];
+
             foreach (int tacklerId in playSubmit.TacklerIds)
             {
-                Player? tackler = await _playerRepository.GetSinglePlayerAsync(tacklerId);
-                if (tackler == null)
+                if (!tacklesToCreate.Contains(tacklerId))
                 {
-                    return new PlayResponseDTO { ErrorMessage = $"TacklerId {tacklerId} invalid" };
+                    Player? tackler = await _playerRepository.GetSinglePlayerAsync(tacklerId);
+                    if (tackler == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"TacklerId {tacklerId} invalid" };
+                    }
+                    if (tackler.TeamId != offensiveTeamId && tackler.TeamId != defensiveTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"TacklerId {tacklerId} invalid, player is not on either team in game" };
+                    }
+                    tacklesToCreate.Add(tacklerId);
                 }
-                if (tackler.TeamId != game.HomeTeamId && tackler.TeamId != game.AwayTeamId)
+            };
+
+            // Validate PassDefense data, remove duplicates
+            List<int> passDefensesToCreate = [];
+
+            foreach (int defenderId in playSubmit.PassDefenderIds)
+            {
+                if (!passDefensesToCreate.Contains(defenderId))
                 {
-                    return new PlayResponseDTO { ErrorMessage = $"TacklerId {tacklerId} invalid, player is not on either team in game" };
+                    Player? defender = await _playerRepository.GetSinglePlayerAsync(defenderId);
+                    if (defender == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"PassDefenderId {defenderId} invalid" };
+                    }
+                    if (defender.TeamId != defensiveTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"PassDefenderId {defenderId} invalid, player is not on defensive team" };
+                    }
+                    passDefensesToCreate.Add(defenderId);
                 }
             };
 
@@ -176,12 +208,22 @@ namespace TheBackfield.Services
             }
 
             // Create Tackles
-            foreach (int tacklerId in playSubmit.TacklerIds)
+            foreach (int tacklerId in tacklesToCreate)
             {
                 Tackle? tackle = await _tackleRepository.CreateTackleAsync(createdPlay.Id, tacklerId);
                 if (tackle == null)
                 {
                     return new PlayResponseDTO { ErrorMessage = $"Tackle for id {tacklerId} failed to create," };
+                }
+            }
+
+            // Create PassDefenses
+            foreach (int defenderId in passDefensesToCreate)
+            {
+                PassDefense? passDefense = await _passDefenseRepository.CreatePassDefenseAsync(createdPlay.Id, defenderId);
+                if (passDefense == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = $"PassDefense for id {defenderId} failed to create," };
                 }
             }
 
