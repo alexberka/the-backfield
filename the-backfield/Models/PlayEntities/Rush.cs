@@ -8,8 +8,7 @@ namespace TheBackfield.Models.PlayEntities
         [Required]
         public int PlayId { get; set; }
         public Play Play { get; set; }
-        [Required]
-        public int RusherId { get; set; }
-        public Player Rusher { get; set; }
+        public int? RusherId { get; set; } = null;
+        public Player? Rusher { get; set; }
     }
 }

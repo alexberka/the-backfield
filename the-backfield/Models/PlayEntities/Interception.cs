@@ -8,8 +8,7 @@ namespace TheBackfield.Models.PlayEntities
         [Required]
         public int PlayId { get; set; }
         public Play Play { get; set; }
-        [Required]
-        public int InterceptedById { get; set; }
+        public int? InterceptedById { get; set; } = null;
         public Player InterceptedBy { get; set; }
         public int InterceptedAt { get; set; }
     }

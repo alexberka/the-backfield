@@ -8,9 +8,9 @@ namespace TheBackfield.Models.PlayEntities
         [Required]
         public int PlayId { get; set; }
         public Play Play { get; set; }
-        public int? BlockedById { get; set; }
+        public int? BlockedById { get; set; } = null;
         public Player? BlockedBy { get; set; }
-        public int? RecoveredById { get; set; }
+        public int? RecoveredById { get; set; } = null;
         public Player? RecoveredBy { get; set; }
         public int ReturnedTo { get; set; }
 
