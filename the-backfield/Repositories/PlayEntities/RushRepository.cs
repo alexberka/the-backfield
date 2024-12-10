@@ -1,14 +1,49 @@
+using Microsoft.EntityFrameworkCore;
+using TheBackfield.Data;
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces.PlayEntities;
+using TheBackfield.Models;
 using TheBackfield.Models.PlayEntities;
 
 namespace TheBackfield.Repositories.PlayEntities;
 
 public class RushRepository : IRushRepository
 {
-    public Task<Rush?> CreateRushAsync(PlaySubmitDTO playSubmit)
+    private readonly TheBackfieldDbContext _dbContext;
+
+    public RushRepository(TheBackfieldDbContext context)
     {
-        throw new NotImplementedException();
+        _dbContext = context;
+    }
+
+    public async Task<Rush?> CreateRushAsync(PlaySubmitDTO playSubmit)
+    {
+        Play? play = await _dbContext.Plays
+            .AsNoTracking()
+            .Include(p => p.Game)
+            .SingleOrDefaultAsync(p => p.Id == playSubmit.Id);
+
+        if (play == null)
+        {
+            return null;
+        }
+
+        Player? rusher = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == playSubmit.RusherId);
+        if (rusher == null || rusher.TeamId != play.TeamId)
+        {
+            return null;
+        }
+
+        Rush newRush = new()
+        {
+            PlayId = playSubmit.Id,
+            RusherId = playSubmit.RusherId
+        };
+
+        _dbContext.Rushes.Add(newRush);
+        await _dbContext.SaveChangesAsync();
+
+        return newRush;
     }
 
     public Task<bool> DeleteRushAsync(int rushId)
@@ -16,9 +51,9 @@ public class RushRepository : IRushRepository
         throw new NotImplementedException();
     }
 
-    public Task<Rush?> GetSingleRushAsync(int rushId)
+    public async Task<Rush?> GetSingleRushAsync(int rushId)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Rushes.FindAsync(rushId);
     }
 
     public Task<Rush?> UpdateRushAsync(PlaySubmitDTO playSubmit)
