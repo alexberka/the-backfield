@@ -12,6 +12,7 @@ namespace TheBackfield.Services
         private readonly IPlayRepository _playRepository;
         private readonly IPassRepository _passRepository;
         private readonly IRushRepository _rushRepository;
+        private readonly ITackleRepository _tackleRepository;
         private readonly IGameRepository _gameRepository;
         private readonly IPlayerRepository _playerRepository;
         private readonly IUserRepository _userRepository;
@@ -20,6 +21,7 @@ namespace TheBackfield.Services
             IPlayRepository playRepository,
             IPassRepository passRepository,
             IRushRepository rushRepository,
+            ITackleRepository tackleRepository,
             IGameRepository gameRepository,
             IPlayerRepository playerRepository,
             IUserRepository userRepository
@@ -28,6 +30,7 @@ namespace TheBackfield.Services
             _playRepository = playRepository;
             _passRepository = passRepository;
             _rushRepository = rushRepository;
+            _tackleRepository = tackleRepository;
             _gameRepository = gameRepository;
             _playerRepository = playerRepository;
             _userRepository = userRepository;
@@ -128,6 +131,20 @@ namespace TheBackfield.Services
                 }
             }
 
+            // Validate Tackle data
+            foreach (int tacklerId in playSubmit.TacklerIds)
+            {
+                Player? tackler = await _playerRepository.GetSinglePlayerAsync(tacklerId);
+                if (tackler == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = $"TacklerId {tacklerId} invalid" };
+                }
+                if (tackler.TeamId != game.HomeTeamId && tackler.TeamId != game.AwayTeamId)
+                {
+                    return new PlayResponseDTO { ErrorMessage = $"TacklerId {tacklerId} invalid, player is not on either team in game" };
+                }
+            };
+
             // Create Play
             Play? createdPlay = await _playRepository.CreatePlayAsync(playSubmit);
             if (createdPlay == null)
@@ -148,13 +165,23 @@ namespace TheBackfield.Services
                 }
             }
 
-            // Create a Pass, if PasserId is defined
+            // Create a Rush, if RusherId is defined
             if (playSubmit.RusherId != null)
             {
                 Rush? rush = await _rushRepository.CreateRushAsync(playSubmit);
                 if (rush == null)
                 {
                     return new PlayResponseDTO { ErrorMessage = "Rush failed to create" };
+                }
+            }
+
+            // Create Tackles
+            foreach (int tacklerId in playSubmit.TacklerIds)
+            {
+                Tackle? tackle = await _tackleRepository.CreateTackleAsync(createdPlay.Id, tacklerId);
+                if (tackle == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = $"Tackle for id {tacklerId} failed to create," };
                 }
             }
 
