@@ -15,6 +15,8 @@ namespace TheBackfield.Services
         private readonly ITackleRepository _tackleRepository;
         private readonly IPassDefenseRepository _passDefenseRepository;
         private readonly IKickoffRepository _kickoffRepository;
+        private readonly IPuntRepository _puntRepository;
+        private readonly IFieldGoalRepository _fieldGoalRepository;
         private readonly IGameRepository _gameRepository;
         private readonly IPlayerRepository _playerRepository;
         private readonly IUserRepository _userRepository;
@@ -26,6 +28,8 @@ namespace TheBackfield.Services
             ITackleRepository tackleRepository,
             IPassDefenseRepository passDefenseRepository,
             IKickoffRepository kickoffRepository,
+            IPuntRepository puntRepository,
+            IFieldGoalRepository fieldGoalRepository,
             IGameRepository gameRepository,
             IPlayerRepository playerRepository,
             IUserRepository userRepository
@@ -37,6 +41,8 @@ namespace TheBackfield.Services
             _tackleRepository = tackleRepository;
             _passDefenseRepository = passDefenseRepository;
             _kickoffRepository = kickoffRepository;
+            _puntRepository = puntRepository;
+            _fieldGoalRepository = fieldGoalRepository;
             _gameRepository = gameRepository;
             _playerRepository = playerRepository;
             _userRepository = userRepository;
@@ -182,12 +188,13 @@ namespace TheBackfield.Services
                 }
             };
 
-            // Validate Kickoff data, if necessary
-            if (playSubmit.Kickoff)
+            // Validate Kickoff, FieldGoal, Punt data, if necessary
+            if (playSubmit.Kickoff || playSubmit.Punt || playSubmit.FieldGoal)
             {
-                if (playSubmit.PasserId != null || playSubmit.RusherId != null || playSubmit.FieldGoal || playSubmit.InterceptedById != null || playSubmit.Punt || playSubmit.PassDefenderIds.Count > 0)
+                if ((playSubmit.Kickoff && (playSubmit.Punt || playSubmit.FieldGoal))
+                    || (playSubmit.Punt && playSubmit.FieldGoal))
                 {
-                    return new PlayResponseDTO { ErrorMessage = "Kickoff cannot occur on a play with pass, rush, field goal, interception, punt, or pass defense statistics" };
+                    return new PlayResponseDTO { ErrorMessage = "Play can only contain one of: Kickoff, Punt, or Field Goal" };
                 }
                 if (playSubmit.KickerId != null)
                 {
@@ -198,7 +205,7 @@ namespace TheBackfield.Services
                     }
                     if (kicker.TeamId != offensiveTeamId)
                     {
-                        return new PlayResponseDTO { ErrorMessage = "KickerId invalid, player is not on kicking team" };
+                        return new PlayResponseDTO { ErrorMessage = $"KickerId invalid, player is not on {(playSubmit.Punt ? "punt" : "kick")}ing team" };
                     }
                 }
                 if (playSubmit.KickReturnerId != null)
@@ -217,7 +224,30 @@ namespace TheBackfield.Services
                 {
                     return new PlayResponseDTO { ErrorMessage = "KickFieldedAt must be between -60 (back of home team endzone) and 60 (back of away team endzone)" };
                 }
+            }
+
+            if (playSubmit.Kickoff)
+            {
+                if (playSubmit.PasserId != null || playSubmit.RusherId != null || playSubmit.InterceptedById != null || playSubmit.PassDefenderIds.Count > 0)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Kickoff cannot occur on a play with pass, rush, interception, or pass defense statistics" };
+                }
                 playSubmit.Down = 0;
+            }
+
+            if (playSubmit.FieldGoal && playSubmit.KickGood)
+            {
+                if (playSubmit.PasserId != null || playSubmit.RusherId != null || playSubmit.TacklerIds.Count > 0
+                    || playSubmit.InterceptedById != null || playSubmit.PassDefenderIds.Count > 0 || playSubmit.ExtraPoint
+                    || playSubmit.Conversion)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "A FieldGoal with KickGood == true cannot occur alongside pass, rush, extra point, conversion, interception, tackle, or pass defense statistics" };
+                }
+                if (playSubmit.KickFake)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "KickFake and KickGood cannot both be set to true" };
+                }
+                playSubmit.FieldPositionEnd = offensiveTeamId == game.HomeTeamId ? 50 : -50;
             }
 
 
@@ -278,6 +308,22 @@ namespace TheBackfield.Services
                 if (kickoff == null)
                 {
                     return new PlayResponseDTO { ErrorMessage = "Kickoff failed to create, request terminated" };
+                }
+            }
+            else if (playSubmit.Punt)
+            {
+                Punt? punt = await _puntRepository.CreatePuntAsync(playSubmit);
+                if (punt == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Punt failed to create, request terminated" };
+                }
+            }
+            else if (playSubmit.FieldGoal)
+            {
+                FieldGoal? fieldGoal = await _fieldGoalRepository.CreateFieldGoalAsync(playSubmit);
+                if (fieldGoal == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "FieldGoal failed to create, request terminated" };
                 }
             }
 
