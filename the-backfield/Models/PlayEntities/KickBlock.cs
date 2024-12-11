@@ -12,7 +12,7 @@ namespace TheBackfield.Models.PlayEntities
         public Player? BlockedBy { get; set; }
         public int? RecoveredById { get; set; } = null;
         public Player? RecoveredBy { get; set; }
-        public int ReturnedTo { get; set; }
+        public int? RecoveredAt { get; set; }
 
     }
 }

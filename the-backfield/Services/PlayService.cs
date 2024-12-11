@@ -17,6 +17,7 @@ namespace TheBackfield.Services
         private readonly IKickoffRepository _kickoffRepository;
         private readonly IPuntRepository _puntRepository;
         private readonly IFieldGoalRepository _fieldGoalRepository;
+        private readonly IKickBlockRepository _kickBlockRepository;
         private readonly IExtraPointRepository _extraPointRepository;
         private readonly IConversionRepository _conversionRepository;
         private readonly IGameRepository _gameRepository;
@@ -32,6 +33,7 @@ namespace TheBackfield.Services
             IKickoffRepository kickoffRepository,
             IPuntRepository puntRepository,
             IFieldGoalRepository fieldGoalRepository,
+            IKickBlockRepository kickBlockRepository,
             IExtraPointRepository extraPointRepository,
             IConversionRepository conversionRepository,
             IGameRepository gameRepository,
@@ -47,6 +49,7 @@ namespace TheBackfield.Services
             _kickoffRepository = kickoffRepository;
             _puntRepository = puntRepository;
             _fieldGoalRepository = fieldGoalRepository;
+            _kickBlockRepository = kickBlockRepository;
             _extraPointRepository = extraPointRepository;
             _conversionRepository = conversionRepository;
             _gameRepository = gameRepository;
@@ -256,6 +259,54 @@ namespace TheBackfield.Services
                 playSubmit.FieldPositionEnd = offensiveTeamId == game.HomeTeamId ? 50 : -50;
             }
 
+            // Validate KickBlock data
+            if (playSubmit.KickBlocked)
+            {
+                if (!playSubmit.FieldGoal && !playSubmit.Punt)
+                {
+                    return new PlayResponseDTO
+                    {
+                        ErrorMessage = "KickBlock may only be created with Punt or FieldGoal. If an extra point was blocked, instead set ExtraPointGood = false and ConversionReturnerId"
+                    };
+                }
+                if (playSubmit.KickGood)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "A KickBlock is invalid where KickGood = true" };
+                }
+                if (playSubmit.KickReturnerId != null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "When a KickBlock occurs, use KickBlockRecoveredById instead of KickReturnerId" };
+                }
+                if (playSubmit.KickBlockedById != null)
+                {
+                    Player? blocker = await _playerRepository.GetSinglePlayerAsync(playSubmit.KickBlockedById ?? 0);
+                    if (blocker == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "KickBlockedById is invalid" };
+                    }
+                    if (blocker.TeamId != defensiveTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "KickBlockedById is invalid, player is not on defensive team" };
+                    }
+                }
+                if (playSubmit.KickBlockRecoveredById != null)
+                {
+                    Player? recovery = await _playerRepository.GetSinglePlayerAsync(playSubmit.KickBlockRecoveredById ?? 0);
+                    if (recovery == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "KickBlockRecoveredById is invalid" };
+                    }
+                    if (recovery.TeamId != defensiveTeamId && recovery.TeamId != offensiveTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "KickBlockedById is invalid, player is not on either team" };
+                    }
+                }
+                if (Math.Abs(playSubmit.KickBlockRecoveredAt ?? 0) > 60)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "KickBlockRecoveredAt must be between -60 (back of home team endzone) and 60 (back of away team endzone)" };
+                }
+            }
+
             // Validate ExtraPoint, Conversion
             if (playSubmit.ExtraPoint || playSubmit.Conversion)
             {
@@ -415,6 +466,16 @@ namespace TheBackfield.Services
                 if (fieldGoal == null)
                 {
                     return new PlayResponseDTO { ErrorMessage = "FieldGoal failed to create, process terminated" };
+                }
+            }
+
+            // Create KickBlock
+            if (playSubmit.KickBlocked)
+            {
+                KickBlock? kickBlock = await _kickBlockRepository.CreateKickBlockAsync(playSubmit);
+                if (kickBlock == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "KickBlock failed to create, process terminated" };
                 }
             }
 
