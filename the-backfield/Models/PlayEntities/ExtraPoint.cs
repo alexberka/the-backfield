@@ -12,5 +12,8 @@ namespace TheBackfield.Models.PlayEntities
         public Player? Kicker { get; set; }
         public bool Good { get; set; }
         public bool Fake { get; set; }
+        public bool DefensiveConversion { get; set; }
+        public int? ReturnerId { get; set; } = null;
+        public Player? Returner { get; set; }
     }
 }
