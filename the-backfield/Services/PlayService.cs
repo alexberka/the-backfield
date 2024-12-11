@@ -17,6 +17,8 @@ namespace TheBackfield.Services
         private readonly IKickoffRepository _kickoffRepository;
         private readonly IPuntRepository _puntRepository;
         private readonly IFieldGoalRepository _fieldGoalRepository;
+        private readonly IExtraPointRepository _extraPointRepository;
+        private readonly IConversionRepository _conversionRepository;
         private readonly IGameRepository _gameRepository;
         private readonly IPlayerRepository _playerRepository;
         private readonly IUserRepository _userRepository;
@@ -30,6 +32,8 @@ namespace TheBackfield.Services
             IKickoffRepository kickoffRepository,
             IPuntRepository puntRepository,
             IFieldGoalRepository fieldGoalRepository,
+            IExtraPointRepository extraPointRepository,
+            IConversionRepository conversionRepository,
             IGameRepository gameRepository,
             IPlayerRepository playerRepository,
             IUserRepository userRepository
@@ -43,6 +47,8 @@ namespace TheBackfield.Services
             _kickoffRepository = kickoffRepository;
             _puntRepository = puntRepository;
             _fieldGoalRepository = fieldGoalRepository;
+            _extraPointRepository = extraPointRepository;
+            _conversionRepository = conversionRepository;
             _gameRepository = gameRepository;
             _playerRepository = playerRepository;
             _userRepository = userRepository;
@@ -250,6 +256,91 @@ namespace TheBackfield.Services
                 playSubmit.FieldPositionEnd = offensiveTeamId == game.HomeTeamId ? 50 : -50;
             }
 
+            // Validate ExtraPoint, Conversion
+            if (playSubmit.ExtraPoint || playSubmit.Conversion)
+            {
+                if (Math.Abs(playSubmit.FieldPositionEnd ?? 0) != 50 || playSubmit.KickGood == true)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "ExtraPoints and Conversions can only be added to play that ends in a touchdown (FieldPositionEnd = +/-50)" };
+                }
+                if (playSubmit.ExtraPoint && playSubmit.ExtraPointGood && (playSubmit.Conversion || playSubmit.DefensiveConversion))
+                {
+                    return new PlayResponseDTO { ErrorMessage = "If ExtraPointGood = true, play cannot also have a Conversion or result in a defensive conversion" };
+                }
+                if (playSubmit.ConversionGood && playSubmit.DefensiveConversion)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "If ConversionGood = true, play cannot also result in a defensive conversion" };
+                }
+                if (playSubmit.ExtraPoint && playSubmit.Conversion && !playSubmit.ExtraPointFake)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "An ExtraPoint and Conversion can only be added to same play if ExtraPointFake = true" };
+                }
+
+                int scoringTeamId = playSubmit.FieldPositionEnd == 50 ? game.HomeTeamId : game.AwayTeamId;
+                int concedingTeamId = scoringTeamId == game.AwayTeamId ? game.HomeTeamId : game.AwayTeamId;
+
+                if (playSubmit.ExtraPointKickerId != null)
+                {
+                    Player? kicker = await _playerRepository.GetSinglePlayerAsync(playSubmit.ExtraPointKickerId ?? 0);
+                    if (kicker == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "ExtraPointKickerId invalid" };
+                    }
+                    if (kicker.TeamId != scoringTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"ExtraPointKickerId invalid, player is not on scoring team" };
+                    }
+                }
+                if (playSubmit.ConversionPasserId != null)
+                {
+                    Player? passer = await _playerRepository.GetSinglePlayerAsync(playSubmit.ConversionPasserId ?? 0);
+                    if (passer == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "ConversionPasserId invalid" };
+                    }
+                    if (passer.TeamId != scoringTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"ConversionPasserId invalid, player is not on scoring team" };
+                    }
+                }
+                if (playSubmit.ConversionReceiverId != null)
+                {
+                    Player? receiver = await _playerRepository.GetSinglePlayerAsync(playSubmit.ConversionReceiverId ?? 0);
+                    if (receiver == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "ConversionReceiverId invalid" };
+                    }
+                    if (receiver.TeamId != scoringTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"ConversionReceiverId invalid, player is not on scoring team" };
+                    }
+                }
+                if (playSubmit.ConversionRusherId != null)
+                {
+                    Player? rusher = await _playerRepository.GetSinglePlayerAsync(playSubmit.ConversionRusherId ?? 0);
+                    if (rusher == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "ConversionRusherId invalid" };
+                    }
+                    if (rusher.TeamId != scoringTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"ConversionRusherId invalid, player is not on scoring team" };
+                    }
+                }
+                if (playSubmit.ConversionReturnerId != null)
+                {
+                    Player? returner = await _playerRepository.GetSinglePlayerAsync(playSubmit.ConversionReturnerId ?? 0);
+                    if (returner == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "ConversionReturnerId invalid" };
+                    }
+                    if (returner.TeamId != concedingTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"ConversionReturnerId invalid, player is not on conceding team" };
+                    }
+                }
+            }
+
 
             // Create Play
             Play? createdPlay = await _playRepository.CreatePlayAsync(playSubmit);
@@ -267,7 +358,7 @@ namespace TheBackfield.Services
                 Pass? pass = await _passRepository.CreatePassAsync(playSubmit);
                 if (pass == null)
                 {
-                    return new PlayResponseDTO { ErrorMessage = "Pass failed to create, request terminated" };
+                    return new PlayResponseDTO { ErrorMessage = "Pass failed to create, process terminated" };
                 }
             }
 
@@ -277,7 +368,7 @@ namespace TheBackfield.Services
                 Rush? rush = await _rushRepository.CreateRushAsync(playSubmit);
                 if (rush == null)
                 {
-                    return new PlayResponseDTO { ErrorMessage = "Rush failed to create, request terminated" };
+                    return new PlayResponseDTO { ErrorMessage = "Rush failed to create, process terminated" };
                 }
             }
 
@@ -287,7 +378,7 @@ namespace TheBackfield.Services
                 Tackle? tackle = await _tackleRepository.CreateTackleAsync(createdPlay.Id, tacklerId);
                 if (tackle == null)
                 {
-                    return new PlayResponseDTO { ErrorMessage = $"Tackle for id {tacklerId} failed to create, request terminated" };
+                    return new PlayResponseDTO { ErrorMessage = $"Tackle for id {tacklerId} failed to create, process terminated" };
                 }
             }
 
@@ -297,17 +388,17 @@ namespace TheBackfield.Services
                 PassDefense? passDefense = await _passDefenseRepository.CreatePassDefenseAsync(createdPlay.Id, defenderId);
                 if (passDefense == null)
                 {
-                    return new PlayResponseDTO { ErrorMessage = $"PassDefense for id {defenderId} failed to create, request terminated" };
+                    return new PlayResponseDTO { ErrorMessage = $"PassDefense for id {defenderId} failed to create, process terminated" };
                 }
             }
 
-            // Create Kickoff
+            // Create Kickoff, Punt, or FieldGoal
             if (playSubmit.Kickoff)
             {
                 Kickoff? kickoff = await _kickoffRepository.CreateKickoffAsync(playSubmit);
                 if (kickoff == null)
                 {
-                    return new PlayResponseDTO { ErrorMessage = "Kickoff failed to create, request terminated" };
+                    return new PlayResponseDTO { ErrorMessage = "Kickoff failed to create, process terminated" };
                 }
             }
             else if (playSubmit.Punt)
@@ -315,7 +406,7 @@ namespace TheBackfield.Services
                 Punt? punt = await _puntRepository.CreatePuntAsync(playSubmit);
                 if (punt == null)
                 {
-                    return new PlayResponseDTO { ErrorMessage = "Punt failed to create, request terminated" };
+                    return new PlayResponseDTO { ErrorMessage = "Punt failed to create, process terminated" };
                 }
             }
             else if (playSubmit.FieldGoal)
@@ -323,7 +414,27 @@ namespace TheBackfield.Services
                 FieldGoal? fieldGoal = await _fieldGoalRepository.CreateFieldGoalAsync(playSubmit);
                 if (fieldGoal == null)
                 {
-                    return new PlayResponseDTO { ErrorMessage = "FieldGoal failed to create, request terminated" };
+                    return new PlayResponseDTO { ErrorMessage = "FieldGoal failed to create, process terminated" };
+                }
+            }
+
+            // Create ExtraPoint
+            if (playSubmit.ExtraPoint)
+            {
+                ExtraPoint? extraPoint = await _extraPointRepository.CreateExtraPointAsync(playSubmit);
+                if (extraPoint == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "ExtraPoint failed to create, process terminated" };
+                }
+            }
+
+            // Create Conversion
+            if (playSubmit.Conversion)
+            {
+                Conversion? conversion = await _conversionRepository.CreateConversionAsync(playSubmit);
+                if (conversion == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Conversion failed to create, process terminated" };
                 }
             }
 

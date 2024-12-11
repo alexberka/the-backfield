@@ -21,7 +21,7 @@ public class TheBackfieldDbContext : DbContext
     public DbSet<Punt> Punts { get; set; }
     public DbSet<FieldGoal> FieldGoals { get; set; }
     public DbSet<ExtraPoint> ExtraPoints { get; set; }
-    public DbSet<Conversion> Conversion { get; set; }
+    public DbSet<Conversion> Conversions { get; set; }
     public DbSet<Fumble> Fumbles { get; set; }
     public DbSet<Interception> Interceptions { get; set; }
     public DbSet<KickBlock> KickBlocks { get; set; }
@@ -100,6 +100,10 @@ public class TheBackfieldDbContext : DbContext
         
         modelBuilder.Entity<ExtraPoint>()
             .HasOne(ep => ep.Kicker)
+            .WithMany()
+            .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<ExtraPoint>()
+            .HasOne(ep => ep.Returner)
             .WithMany()
             .OnDelete(DeleteBehavior.SetNull);
 

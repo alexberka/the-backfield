@@ -14,8 +14,9 @@ namespace TheBackfield.Models.PlayEntities
         public Player? Receiver { get; set; }
         public int? RusherId { get; set; } = null;
         public Player? Rusher { get; set; }
+        public bool Good { get; set; }
+        public bool DefensiveConversion { get; set; }
         public int? ReturnerId { get; set; } = null;
         public Player? Returner { get; set; }
-        public bool Good { get; set; }
     }
 }

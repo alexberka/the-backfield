@@ -1,14 +1,76 @@
+using Microsoft.EntityFrameworkCore;
+using TheBackfield.Data;
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces.PlayEntities;
+using TheBackfield.Models;
 using TheBackfield.Models.PlayEntities;
 
 namespace TheBackfield.Repositories.PlayEntities;
 
 public class ConversionRepository : IConversionRepository
 {
-    public Task<Conversion?> CreateConversionAsync(PlaySubmitDTO playSubmit)
+    private readonly TheBackfieldDbContext _dbContext;
+    public ConversionRepository(TheBackfieldDbContext context)
     {
-        throw new NotImplementedException();
+        _dbContext = context;
+    }
+
+    public async Task<Conversion?> CreateConversionAsync(PlaySubmitDTO playSubmit)
+    {
+        Play? play = await _dbContext.Plays.FindAsync(playSubmit.Id);
+        if (play == null)
+        {
+            return null;
+        }
+
+        if (playSubmit.ConversionPasserId != null)
+        {
+            Player? passer = await _dbContext.Players.FindAsync(playSubmit.ConversionPasserId);
+            if (passer == null)
+            {
+                return null;
+            }
+        }
+        if (playSubmit.ConversionReceiverId != null)
+        {
+            Player? receiver = await _dbContext.Players.FindAsync(playSubmit.ConversionReceiverId);
+            if (receiver == null)
+            {
+                return null;
+            }
+        }
+        if (playSubmit.ConversionRusherId != null)
+        {
+            Player? rusher = await _dbContext.Players.FindAsync(playSubmit.ConversionRusherId);
+            if (rusher == null)
+            {
+                return null;
+            }
+        }
+        if (playSubmit.ConversionReturnerId != null)
+        {
+            Player? returner = await _dbContext.Players.FindAsync(playSubmit.ConversionReturnerId);
+            if (returner == null)
+            {
+                return null;
+            }
+        }
+
+        Conversion newConversion = new()
+        {
+            PlayId = playSubmit.Id,
+            PasserId = playSubmit.ConversionPasserId,
+            ReceiverId = playSubmit.ConversionReceiverId,
+            RusherId = playSubmit.ConversionRusherId,
+            Good = playSubmit.ConversionGood,
+            DefensiveConversion = playSubmit.DefensiveConversion,
+            ReturnerId = playSubmit.ConversionReturnerId
+        };
+
+        _dbContext.Conversions.Add(newConversion);
+        await _dbContext.SaveChangesAsync();
+
+        return newConversion;
     }
 
     public Task<bool> DeleteConversionAsync(int conversionId)
@@ -16,9 +78,9 @@ public class ConversionRepository : IConversionRepository
         throw new NotImplementedException();
     }
 
-    public Task<Conversion?> GetSingleConversionAsync(int conversionId)
+    public async Task<Conversion?> GetSingleConversionAsync(int conversionId)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Conversions.AsNoTracking().SingleOrDefaultAsync(c => c.Id == conversionId);
     }
 
     public Task<Conversion?> UpdateConversionAsync(PlaySubmitDTO playSubmit)
