@@ -1,14 +1,50 @@
+using Microsoft.EntityFrameworkCore;
+using TheBackfield.Data;
 using TheBackfield.DTOs.PlayEntities;
 using TheBackfield.Interfaces.PlayEntities;
+using TheBackfield.Models;
 using TheBackfield.Models.PlayEntities;
 
 namespace TheBackfield.Repositories.PlayEntities;
 
 public class LateralRepository : ILateralRepository
 {
-    public Task<Lateral?> CreateLateralAsync(LateralSubmitDTO lateralSubmit)
+    private readonly TheBackfieldDbContext _dbContext;
+
+    public LateralRepository(TheBackfieldDbContext context)
     {
-        throw new NotImplementedException();
+        _dbContext = context;
+    }
+    public async Task<Lateral?> CreateLateralAsync(LateralSubmitDTO lateralSubmit)
+    {
+        Play? play = await _dbContext.Plays
+            .AsNoTracking()
+            .Include(p => p.Game)
+            .SingleOrDefaultAsync(p => p.Id == lateralSubmit.PlayId);
+
+        if (play == null)
+        {
+            return null;
+        }
+
+        Player? carrier = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == lateralSubmit.NewCarrierId);
+        if (carrier == null)
+        {
+            return null;
+        }
+
+        Lateral newLateral = new()
+        {
+            PlayId = play.Id,
+            NewCarrierId = lateralSubmit.NewCarrierId,
+            PossessionAt = lateralSubmit.PossessionAt,
+            CarriedTo = lateralSubmit.CarriedTo
+        };
+
+        _dbContext.Laterals.Add(newLateral);
+        await _dbContext.SaveChangesAsync();
+
+        return newLateral;
     }
 
     public Task<bool> DeleteLateralAsync(int lateralId)
@@ -16,9 +52,9 @@ public class LateralRepository : ILateralRepository
         throw new NotImplementedException();
     }
 
-    public Task<Lateral?> GetSingleLateralAsync(int lateralId)
+    public async Task<Lateral?> GetSingleLateralAsync(int lateralId)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Laterals.AsNoTracking().SingleOrDefaultAsync(l => l.Id == lateralId);
     }
 
     public Task<Lateral?> UpdateLateralAsync(LateralSubmitDTO lateralSubmit)
