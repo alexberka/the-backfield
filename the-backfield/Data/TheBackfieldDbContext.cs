@@ -155,6 +155,10 @@ public class TheBackfieldDbContext : DbContext
             .HasOne(l => l.NewCarrier)
             .WithMany()
             .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<Lateral>()
+            .HasOne(l => l.PrevCarrier)
+            .WithMany()
+            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<PlayPenalty>()
             .HasOne(pp => pp.Player)

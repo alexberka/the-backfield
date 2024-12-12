@@ -8,6 +8,8 @@ namespace TheBackfield.Models.PlayEntities
         [Required]
         public int PlayId { get; set; }
         public Play Play { get; set; }
+        public int? PrevCarrierId { get; set; } = null;
+        public Player PrevCarrier { get; set; }
         public int? NewCarrierId { get; set; } = null;
         public Player NewCarrier { get; set; }
         public int? PossessionAt { get; set; }
