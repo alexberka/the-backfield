@@ -36,6 +36,19 @@ public static class GameEndpoints
             .WithOpenApi()
             .Produces<Game>(StatusCodes.Status200OK);
 
+        group.MapGet("/games/{gameId}/game-stream", async (IGameService gameService, int gameId) =>
+        {
+            GameStreamDTO? gameStream = await gameService.GetGameStreamAsync(gameId);
+            if (gameStream == null)
+            {
+                return Results.BadRequest("Invalid gameId");
+            }
+
+            return Results.Ok(gameStream);
+        })
+            .WithOpenApi()
+            .Produces<Game>(StatusCodes.Status200OK);
+
         group.MapPost("/games", async (IGameService gameService, GameSubmitDTO gameSubmit) =>
         {
             GameResponseDTO response = await gameService.CreateGameAsync(gameSubmit);

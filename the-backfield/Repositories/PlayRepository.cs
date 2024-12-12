@@ -115,6 +115,7 @@ namespace TheBackfield.Repositories
                 .Include(p => p.KickBlock)
                 .Include(p => p.Laterals)
                 .Include(p => p.Penalties)
+                .Where(p => p.GameId == gameId)
                 .Where(p => Math.Abs(p.FieldPositionEnd ?? 0) == 50 && !p.Penalties.Any(pe => pe.NoPlay == true && pe.Enforced == true))
                 .ToListAsync();
         }
@@ -122,6 +123,39 @@ namespace TheBackfield.Repositories
         public Task<Play?> UpdatePlayAsync(PlaySubmitDTO playSubmit)
         {
             throw new NotImplementedException();
+        }
+
+        public Task<List<Play>> GetCurrentDriveByGameAsync(int gameId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<Play?> GetLastPlayByGameAsync(int gameId)
+        {
+            List<Play> gamePlays = await _dbContext.Plays
+                .AsNoTracking()
+                .Include(p => p.Pass)
+                    .ThenInclude(p => p.Passer)
+                .Include(p => p.Pass)
+                    .ThenInclude(p => p.Receiver)
+                .Include(p => p.Rush)
+                    .ThenInclude(r => r.Rusher)
+                .Include(p => p.Kickoff)
+                .Include(p => p.Punt)
+                .Include(p => p.FieldGoal)
+                .Include(p => p.ExtraPoint)
+                .Include(p => p.Conversion)
+                .Include(p => p.Fumbles)
+                .Include(p => p.Interception)
+                .Include(p => p.KickBlock)
+                .Include(p => p.Laterals)
+                .Include(p => p.Penalties)
+                .Where(p => p.GameId == gameId)
+                .ToListAsync();
+
+            Play? lastPlay = gamePlays.SingleOrDefault(p => !gamePlays.Any(gp => gp.PrevPlayId == p.Id));
+
+            return lastPlay;
         }
     }
 }

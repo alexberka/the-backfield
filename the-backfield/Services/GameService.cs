@@ -1,3 +1,4 @@
+using the_backfield.Migrations;
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
 using TheBackfield.Models;
@@ -8,12 +9,19 @@ namespace TheBackfield.Services;
 public class GameService : IGameService
 {
     private readonly IGameRepository _gameRepository;
+    private readonly IPlayRepository _playRepository;
     private readonly ITeamRepository _teamRepository;
     private readonly IUserRepository _userRepository;
 
-    public GameService(IGameRepository gameRepository, ITeamRepository teamRepository, IUserRepository userRepository)
+    public GameService(
+        IGameRepository gameRepository,
+        IPlayRepository playRepository,
+        ITeamRepository teamRepository,
+        IUserRepository userRepository
+        )
     {
         _gameRepository = gameRepository;
+        _playRepository = playRepository;
         _teamRepository = teamRepository;
         _userRepository = userRepository;
     }
@@ -76,6 +84,34 @@ public class GameService : IGameService
         User? user = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
         Game? game = await _gameRepository.GetSingleGameAsync(gameId);
         return SessionKeyClient.VerifyAccess(sessionKey, user, game);
+    }
+
+    public async Task<GameStreamDTO?> GetGameStreamAsync(int gameId)
+    {
+        Game? game = await _gameRepository.GetSingleGameAsync(gameId);
+        if (game == null)
+        {
+            return null;
+        }
+
+        List<Play> scoringPlays = game.Plays
+            .Where(p => Math.Abs(p.FieldPositionEnd ?? 0) == 50 && !p.Penalties.Any(pe => pe.NoPlay == true && pe.Enforced == true))
+            .ToList();
+
+        //foreach (Play play in scoringPlays)
+        //{
+
+        //}
+
+        Play? currentPlay = game.Plays.SingleOrDefault(p => !game.Plays.Any(gp => gp.PrevPlayId == p.Id));
+
+        Play? prevPlay = game.Plays.SingleOrDefault(p => p.Id == currentPlay?.PrevPlayId);  
+
+        List<Play> currentDrive = [];
+
+        GameStreamDTO gameStream = new(game);
+
+        return gameStream;
     }
 
     public async Task<GameResponseDTO> UpdateGameAsync(GameSubmitDTO gameSubmit)
