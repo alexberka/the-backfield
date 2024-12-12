@@ -20,6 +20,7 @@ namespace TheBackfield.Services
         private readonly IKickBlockRepository _kickBlockRepository;
         private readonly IExtraPointRepository _extraPointRepository;
         private readonly IConversionRepository _conversionRepository;
+        private readonly IInterceptionRepository _interceptionRepository;
         private readonly IGameRepository _gameRepository;
         private readonly IPlayerRepository _playerRepository;
         private readonly IUserRepository _userRepository;
@@ -36,6 +37,7 @@ namespace TheBackfield.Services
             IKickBlockRepository kickBlockRepository,
             IExtraPointRepository extraPointRepository,
             IConversionRepository conversionRepository,
+            IInterceptionRepository interceptionRepository,
             IGameRepository gameRepository,
             IPlayerRepository playerRepository,
             IUserRepository userRepository
@@ -52,6 +54,7 @@ namespace TheBackfield.Services
             _kickBlockRepository = kickBlockRepository;
             _extraPointRepository = extraPointRepository;
             _conversionRepository = conversionRepository;
+            _interceptionRepository = interceptionRepository;
             _gameRepository = gameRepository;
             _playerRepository = playerRepository;
             _userRepository = userRepository;
@@ -307,7 +310,7 @@ namespace TheBackfield.Services
                 }
             }
 
-            // Validate ExtraPoint, Conversion
+            // Validate ExtraPoint, Conversion data
             if (playSubmit.ExtraPoint || playSubmit.Conversion)
             {
                 if (Math.Abs(playSubmit.FieldPositionEnd ?? 0) != 50 || playSubmit.KickGood == true)
@@ -389,6 +392,32 @@ namespace TheBackfield.Services
                     {
                         return new PlayResponseDTO { ErrorMessage = $"ConversionReturnerId invalid, player is not on conceding team" };
                     }
+                }
+            }
+
+            // Validate Interception data
+            if (playSubmit.InterceptedById != null)
+            {
+                if (playSubmit.PasserId == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Interception can only be recorded alongside pass play" };
+                }
+                if (playSubmit.Completion)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Interception cannot be added to a complete pass" };
+                }
+                Player? defender = await _playerRepository.GetSinglePlayerAsync(playSubmit.InterceptedById ?? 0);
+                if (defender == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "InterceptedById is invalid" };
+                }
+                if (defender.TeamId != defensiveTeamId)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "InterceptedById is invalid, player is not on defensive team" };
+                }
+                if (Math.Abs(playSubmit.InterceptedAt ?? 0) > 60)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "InterceptedAt must be between -60 (back of home team endzone) and 60 (back of away team endzone)" };
                 }
             }
 
@@ -496,6 +525,16 @@ namespace TheBackfield.Services
                 if (conversion == null)
                 {
                     return new PlayResponseDTO { ErrorMessage = "Conversion failed to create, process terminated" };
+                }
+            }
+
+            // Create Interception
+            if (playSubmit.InterceptedById != null)
+            {
+                Interception? interception = await _interceptionRepository.CreateInterceptionAsync(playSubmit);
+                if (interception == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Interception failed to create, process terminated" };
                 }
             }
 

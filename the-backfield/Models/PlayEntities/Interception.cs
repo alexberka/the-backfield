@@ -10,6 +10,6 @@ namespace TheBackfield.Models.PlayEntities
         public Play Play { get; set; }
         public int? InterceptedById { get; set; } = null;
         public Player InterceptedBy { get; set; }
-        public int InterceptedAt { get; set; }
+        public int? InterceptedAt { get; set; }
     }
 }
