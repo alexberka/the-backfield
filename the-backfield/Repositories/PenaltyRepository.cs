@@ -29,9 +29,9 @@ namespace TheBackfield.Repositories
             return await _dbContext.Penalties.Where(p => p.UserId == null || p.UserId == userId).ToListAsync();
         }
 
-        public Task<Penalty?> GetSinglePenaltyAsync(int penaltyId)
+        public async Task<Penalty?> GetSinglePenaltyAsync(int penaltyId)
         {
-            throw new NotImplementedException();
+            return await _dbContext.Penalties.AsNoTracking().SingleOrDefaultAsync(p => p.Id == penaltyId);
         }
 
         public Task<Penalty?> UpdatePenaltyAsync(PenaltySubmitDTO penaltySubmit)
