@@ -1,4 +1,5 @@
 ﻿using TheBackfield.DTOs;
+using TheBackfield.DTOs.PlayEntities;
 using TheBackfield.Interfaces;
 using TheBackfield.Interfaces.PlayEntities;
 using TheBackfield.Models;
@@ -21,6 +22,8 @@ namespace TheBackfield.Services
         private readonly IExtraPointRepository _extraPointRepository;
         private readonly IConversionRepository _conversionRepository;
         private readonly IInterceptionRepository _interceptionRepository;
+        private readonly IFumbleRepository _fumbleRepository;
+        private readonly ILateralRepository _lateralRepository;
         private readonly IGameRepository _gameRepository;
         private readonly IPlayerRepository _playerRepository;
         private readonly IUserRepository _userRepository;
@@ -38,6 +41,8 @@ namespace TheBackfield.Services
             IExtraPointRepository extraPointRepository,
             IConversionRepository conversionRepository,
             IInterceptionRepository interceptionRepository,
+            IFumbleRepository fumbleRepository,
+            ILateralRepository lateralRepository,
             IGameRepository gameRepository,
             IPlayerRepository playerRepository,
             IUserRepository userRepository
@@ -55,6 +60,8 @@ namespace TheBackfield.Services
             _extraPointRepository = extraPointRepository;
             _conversionRepository = conversionRepository;
             _interceptionRepository = interceptionRepository;
+            _fumbleRepository = fumbleRepository;
+            _lateralRepository = lateralRepository;
             _gameRepository = gameRepository;
             _playerRepository = playerRepository;
             _userRepository = userRepository;
@@ -421,6 +428,85 @@ namespace TheBackfield.Services
                 }
             }
 
+            // Validate Fumble data
+            foreach (FumbleSubmitDTO fumble in playSubmit.Fumbles)
+            {
+                Player? fumbler = await _playerRepository.GetSinglePlayerAsync(fumble.FumbleCommittedById);
+                if (fumbler == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = $"FumbleCommittedById {fumble.FumbleCommittedById} is invalid" };
+                }
+                if (fumbler.TeamId != defensiveTeamId && fumbler.TeamId != offensiveTeamId)
+                {
+                    return new PlayResponseDTO { ErrorMessage = $"FumbleCommittedById {fumble.FumbleCommittedById} is invalid, player is not on either team" };
+                }
+                if (fumble.FumbleForcedById != null)
+                {
+                    Player? forcedBy = await _playerRepository.GetSinglePlayerAsync(fumble.FumbleForcedById ?? 0);
+                    if (forcedBy == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"FumbleForcedById {fumble.FumbleForcedById} is invalid" };
+                    }
+                    if (forcedBy.TeamId != defensiveTeamId && forcedBy.TeamId != offensiveTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"FumbleForcedById {fumble.FumbleForcedById} is invalid, player is not on either team" };
+                    }
+                }
+                if (fumble.FumbleRecoveredById != null)
+                {
+                    Player? recovery = await _playerRepository.GetSinglePlayerAsync(fumble.FumbleRecoveredById ?? 0);
+                    if (recovery == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"FumbleRecoveredById {fumble.FumbleRecoveredById} is invalid" };
+                    }
+                    if (recovery.TeamId != defensiveTeamId && recovery.TeamId != offensiveTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"FumbleRecoveredById {fumble.FumbleRecoveredById} is invalid, player is not on either team" };
+                    }
+                }
+                if (Math.Abs(fumble.FumbledAt ?? 0) > 60 || Math.Abs(fumble.FumbleRecoveredAt ?? 0) > 60)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "FumbledAt and FumbleRecoveredAt must be between -60 (back of home team endzone) and 60 (back of away team endzone)" };
+                }
+            }
+
+            // Validate Lateral data
+            foreach (LateralSubmitDTO lateral in playSubmit.Laterals)
+            {
+                Player? prevCarrier = await _playerRepository.GetSinglePlayerAsync(lateral.PrevCarrierId);
+                if (prevCarrier == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = $"PrevCarrierId {lateral.PrevCarrierId} is invalid" };
+                }
+                if (prevCarrier.TeamId != defensiveTeamId && prevCarrier.TeamId != offensiveTeamId)
+                {
+                    return new PlayResponseDTO { ErrorMessage = $"PrevCarrierId {lateral.PrevCarrierId} is invalid, player is not on either team" };
+                }
+                Player? newCarrier = await _playerRepository.GetSinglePlayerAsync(lateral.NewCarrierId);
+                if (newCarrier == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = $"NewCarrierId {lateral.NewCarrierId} is invalid" };
+                }
+                if (newCarrier.TeamId != defensiveTeamId && newCarrier.TeamId != offensiveTeamId)
+                {
+                    return new PlayResponseDTO { ErrorMessage = $"NewCarrierId {lateral.NewCarrierId} is invalid, player is not on either team" };
+                }
+                if (prevCarrier.TeamId != newCarrier.TeamId)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "PrevCarrier and NewCarrier in a Lateral must be on the same team. For change of possession, log as Fumble" };
+                }
+                if (Math.Abs(lateral.PossessionAt ?? 0) > 60 || Math.Abs(lateral.CarriedTo ?? 0) > 60)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "PossessionAt and CarriedTo must be between -60 (back of home team endzone) and 60 (back of away team endzone)" };
+                }
+            }
+
+            // Validate chain of possession and establish end of play possession
+            (int possessionTeamId, bool incompleteChain) = await VerifyPossessionChainAsync(playSubmit, game.HomeTeamId, game.AwayTeamId);
+            if (incompleteChain || possessionTeamId == 0)
+            {
+                return new PlayResponseDTO { ErrorMessage = "Unable to reconcile play data to establish possession, ensure all ids are provided and accurate" };
+            }
 
             // Create Play
             Play? createdPlay = await _playRepository.CreatePlayAsync(playSubmit);
@@ -538,6 +624,28 @@ namespace TheBackfield.Services
                 }
             }
 
+            // Create Fumble
+            foreach (FumbleSubmitDTO fumble in playSubmit.Fumbles)
+            {
+                fumble.PlayId = playSubmit.Id;
+                Fumble? newFumble = await _fumbleRepository.CreateFumbleAsync(fumble);
+                if (newFumble == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Fumble failed to create, process terminated" };
+                }
+            }
+
+            // Create Lateral
+            foreach (LateralSubmitDTO lateral in playSubmit.Laterals)
+            {
+                lateral.PlayId = playSubmit.Id;
+                Lateral? newLateral = await _lateralRepository.CreateLateralAsync(lateral);
+                if (newLateral == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Lateral failed to create, process terminated" };
+                }
+            }
+
             return new PlayResponseDTO { Play = createdPlay };
         }
 
@@ -568,6 +676,88 @@ namespace TheBackfield.Services
         public Task<PlayResponseDTO> UpdatePlayAsync(PlaySubmitDTO playSubmit)
         {
             throw new NotImplementedException();
+        }
+
+        private async Task<(int possessionTeamId, bool incompleteChain)> VerifyPossessionChainAsync(PlaySubmitDTO playSubmit, int homeTeamId, int awayTeamId)
+        {
+            List<int> hasPossession = [];
+            List<int> cedesPossession = [];
+
+            hasPossession.Add(playSubmit.PasserId ?? 0);
+            hasPossession.Add(playSubmit.Completion ? playSubmit.ReceiverId ?? 0 : 0);
+            hasPossession.Add(playSubmit.RusherId ?? 0);
+            hasPossession.Add(playSubmit.KickReturnerId ?? 0);
+            hasPossession.Add(playSubmit.InterceptedById ?? 0);
+            hasPossession.Add(playSubmit.KickBlockRecoveredById ?? 0);
+            foreach (FumbleSubmitDTO fumble in playSubmit.Fumbles)
+            {
+                cedesPossession.Add(fumble.FumbleCommittedById);
+                hasPossession.Add(fumble.FumbleRecoveredById ?? 0);
+            }
+            foreach (LateralSubmitDTO lateral in playSubmit.Laterals)
+            {
+                cedesPossession.Add(lateral.PrevCarrierId);
+                hasPossession.Add(lateral.NewCarrierId);
+            }
+            if (playSubmit.Completion || playSubmit.InterceptedById != null)
+            {
+                cedesPossession.Add(playSubmit.PasserId ?? 0);
+            }
+            hasPossession.RemoveAll(id => id == 0);
+            cedesPossession.RemoveAll(id => id == 0);
+
+            foreach (int id in cedesPossession)
+            {
+                if (hasPossession.Contains(id))
+                {
+                    hasPossession.Remove(id);
+                }
+                else
+                {
+                    return (0, true);
+                }
+            }
+
+            if (hasPossession.Count > 1)
+            {
+                return (0, true);
+            }
+
+            if (hasPossession.Count == 0)
+            {
+                if (playSubmit.FieldGoal && playSubmit.KickGood)
+                {
+                    return (playSubmit.TeamId, false);
+                }
+                FumbleSubmitDTO? notRecovered = playSubmit.Fumbles.SingleOrDefault(f => f.FumbleRecoveredById == null);
+                if (notRecovered != null)
+                {
+                    Player? fumbler = await _playerRepository.GetSinglePlayerAsync(notRecovered.FumbleCommittedById);
+                    if (fumbler == null || (fumbler.TeamId != homeTeamId && fumbler.TeamId != awayTeamId))
+                    {
+                        return (0, false);
+                    }
+                    if (Math.Abs(playSubmit.FieldPositionEnd ?? 0) == 50)
+                    {
+                        return (fumbler.TeamId == homeTeamId ? awayTeamId : homeTeamId, false);
+                    }
+                    return (fumbler.TeamId, false);
+                }
+                if (((playSubmit.Kickoff || playSubmit.Punt) && playSubmit.KickReturnerId == null) 
+                    || (playSubmit.KickBlocked && playSubmit.KickBlockRecoveredById == null))
+                {
+                    return (playSubmit.TeamId == homeTeamId ? awayTeamId : homeTeamId, false);
+                }
+                return (0, true);
+            }
+                
+            Player? player = await _playerRepository.GetSinglePlayerAsync(hasPossession[0]);
+            if (player == null || (player.TeamId != homeTeamId && player.TeamId != awayTeamId))
+            {
+                return (0, false);
+            }
+
+            return (player.TeamId == homeTeamId ? homeTeamId : awayTeamId, false);
         }
     }
 }

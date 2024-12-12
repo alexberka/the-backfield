@@ -27,8 +27,13 @@ public class LateralRepository : ILateralRepository
             return null;
         }
 
-        Player? carrier = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == lateralSubmit.NewCarrierId);
-        if (carrier == null)
+        Player? prevCarrier = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == lateralSubmit.PrevCarrierId);
+        if (prevCarrier == null)
+        {
+            return null;
+        }
+        Player? newCarrier = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == lateralSubmit.NewCarrierId);
+        if (newCarrier == null)
         {
             return null;
         }
@@ -36,6 +41,7 @@ public class LateralRepository : ILateralRepository
         Lateral newLateral = new()
         {
             PlayId = play.Id,
+            PrevCarrierId = lateralSubmit.PrevCarrierId,
             NewCarrierId = lateralSubmit.NewCarrierId,
             PossessionAt = lateralSubmit.PossessionAt,
             CarriedTo = lateralSubmit.CarriedTo
