@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using TheBackfield.Models;
 
 namespace TheBackfield.DTOs.PlayEntities;
 
@@ -12,7 +11,7 @@ public class PlayPenaltySubmitDTO
     public int? PlayerId { get; set; } = null;
     public int? TeamId { get; set; } = null;
     public bool Enforced { get; set; } = true;
-    public int? EnforcedFrom { get; set; } = null;
+    public int EnforcedFrom { get; set; }
     public bool NoPlay { get; set; } = true;
     public bool LossOfDown { get; set; } = false;
     public bool AutoFirstDown { get; set; } = false;

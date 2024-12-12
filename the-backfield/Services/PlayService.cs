@@ -24,7 +24,9 @@ namespace TheBackfield.Services
         private readonly IInterceptionRepository _interceptionRepository;
         private readonly IFumbleRepository _fumbleRepository;
         private readonly ILateralRepository _lateralRepository;
+        private readonly IPlayPenaltyRepository _playPenaltyRepository;
         private readonly IGameRepository _gameRepository;
+        private readonly IPenaltyRepository _penaltyRepository;
         private readonly IPlayerRepository _playerRepository;
         private readonly IUserRepository _userRepository;
 
@@ -43,7 +45,9 @@ namespace TheBackfield.Services
             IInterceptionRepository interceptionRepository,
             IFumbleRepository fumbleRepository,
             ILateralRepository lateralRepository,
+            IPlayPenaltyRepository playPenaltyRepository,
             IGameRepository gameRepository,
+            IPenaltyRepository penaltyRepository,
             IPlayerRepository playerRepository,
             IUserRepository userRepository
             )
@@ -62,7 +66,9 @@ namespace TheBackfield.Services
             _interceptionRepository = interceptionRepository;
             _fumbleRepository = fumbleRepository;
             _lateralRepository = lateralRepository;
+            _playPenaltyRepository = playPenaltyRepository;
             _gameRepository = gameRepository;
+            _penaltyRepository = penaltyRepository;
             _playerRepository = playerRepository;
             _userRepository = userRepository;
         }
@@ -501,6 +507,58 @@ namespace TheBackfield.Services
                 }
             }
 
+            // Validate PlayPenalty data
+            foreach (PlayPenaltySubmitDTO playPenalty in playSubmit.Penalties)
+            {
+                Penalty? penalty = await _penaltyRepository.GetSinglePenaltyAsync(playPenalty.PenaltyId);
+                if (penalty == null)
+                {
+                    return new PlayResponseDTO { NotFound = true, ErrorMessage = $"PenaltyId {playPenalty.PenaltyId} is invalid" };
+                }
+                if (penalty.UserId != null && penalty.UserId != user?.Id)
+                {
+                    return new PlayResponseDTO { Forbidden = true, ErrorMessage = "User lacks access permissions to this Penalty" };
+                }
+
+                if (playPenalty.TeamId != null && playPenalty.TeamId != offensiveTeamId && playPenalty.TeamId != defensiveTeamId)
+                {
+                    return new PlayResponseDTO { ErrorMessage = $"TeamId {playPenalty.TeamId} in Penalty is invalid, does not match either team" };
+                }
+                if (playPenalty.PlayerId != null)
+                {
+                    Player? penalized = await _playerRepository.GetSinglePlayerAsync(playPenalty.PlayerId ?? 0);
+                    if (penalized == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"PlayerId {playPenalty.PlayerId} in Penalty is invalid" };
+                    }
+                    if (playPenalty.TeamId != null && penalized.TeamId != playPenalty.TeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"PlayerId {playPenalty.PlayerId} in Penalty is invalid, player is not on penalized team" };
+                    }
+                    if (playPenalty.TeamId == null)
+                    {
+                        if (penalized.TeamId != offensiveTeamId && penalized.TeamId != defensiveTeamId)
+                        {
+                            return new PlayResponseDTO { ErrorMessage = $"PlayerId {playPenalty.PlayerId} in Penalty is invalid, player is not on either team" };
+                        }
+                        playPenalty.TeamId = penalized.TeamId;
+                    }
+                }
+                if (playPenalty.TeamId == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "TeamId and PlayerId for a Penalty cannot both be null" };
+                }
+                if (Math.Abs(playPenalty.EnforcedFrom) > 50)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "EnforcedFrom in Penalty must be between -50 (home team endzone) and 50 (away team endzone)" };
+                }
+                playPenalty.Yardage = playPenalty.Yardage != null ? Math.Abs(playPenalty.Yardage ?? 0) : penalty.Yardage;
+                if (playPenalty.Yardage > 100)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Penalty Yardage cannot exceed 100 yards for single penalty" };
+                }
+            }
+
             // Validate chain of possession and establish end of play possession
             (int possessionTeamId, bool incompleteChain) = await VerifyPossessionChainAsync(playSubmit, game.HomeTeamId, game.AwayTeamId);
             if (incompleteChain || possessionTeamId == 0)
@@ -624,7 +682,7 @@ namespace TheBackfield.Services
                 }
             }
 
-            // Create Fumble
+            // Create Fumbles
             foreach (FumbleSubmitDTO fumble in playSubmit.Fumbles)
             {
                 fumble.PlayId = playSubmit.Id;
@@ -634,8 +692,8 @@ namespace TheBackfield.Services
                     return new PlayResponseDTO { ErrorMessage = "Fumble failed to create, process terminated" };
                 }
             }
-
-            // Create Lateral
+            
+            // Create Laterals
             foreach (LateralSubmitDTO lateral in playSubmit.Laterals)
             {
                 lateral.PlayId = playSubmit.Id;
@@ -643,6 +701,17 @@ namespace TheBackfield.Services
                 if (newLateral == null)
                 {
                     return new PlayResponseDTO { ErrorMessage = "Lateral failed to create, process terminated" };
+                }
+            }
+
+            // Create PlayPenalties
+            foreach (PlayPenaltySubmitDTO playPenalty in playSubmit.Penalties)
+            {
+                playPenalty.PlayId = playSubmit.Id;
+                PlayPenalty? newPlayPenalty = await _playPenaltyRepository.CreatePlayPenaltyAsync(playPenalty);
+                if (newPlayPenalty == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Penalty failed to create, process terminated" };
                 }
             }
 
