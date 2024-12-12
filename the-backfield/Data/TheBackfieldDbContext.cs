@@ -20,8 +20,10 @@ public class TheBackfieldDbContext : DbContext
     public DbSet<Kickoff> Kickoffs { get; set; }
     public DbSet<Punt> Punts { get; set; }
     public DbSet<FieldGoal> FieldGoals { get; set; }
+    public DbSet<Touchdown> Touchdowns { get; set; }
     public DbSet<ExtraPoint> ExtraPoints { get; set; }
     public DbSet<Conversion> Conversions { get; set; }
+    public DbSet<Safety> Safeties { get; set; }
     public DbSet<Fumble> Fumbles { get; set; }
     public DbSet<Interception> Interceptions { get; set; }
     public DbSet<KickBlock> KickBlocks { get; set; }
@@ -97,7 +99,12 @@ public class TheBackfieldDbContext : DbContext
             .HasOne(fg => fg.Kicker)
             .WithMany()
             .OnDelete(DeleteBehavior.SetNull);
-        
+
+        modelBuilder.Entity<Touchdown>()
+            .HasOne(fg => fg.Player)
+            .WithMany()
+            .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<ExtraPoint>()
             .HasOne(ep => ep.Kicker)
             .WithMany()
@@ -121,6 +128,11 @@ public class TheBackfieldDbContext : DbContext
             .OnDelete(DeleteBehavior.SetNull);
         modelBuilder.Entity<Conversion>()
             .HasOne(c => c.Returner)
+            .WithMany()
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Safety>()
+            .HasOne(c => c.CedingPlayer)
             .WithMany()
             .OnDelete(DeleteBehavior.SetNull);
 

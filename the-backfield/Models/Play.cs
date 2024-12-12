@@ -26,8 +26,10 @@ namespace TheBackfield.Models
         public Kickoff? Kickoff { get; set; }
         public Punt? Punt { get; set; }
         public FieldGoal? FieldGoal { get; set; }
+        public Touchdown? Touchdown { get; set; }
         public ExtraPoint? ExtraPoint { get; set; }
         public Conversion? Conversion { get; set; }
+        public Safety? Safety { get; set; }
         public List<Fumble> Fumbles { get; set; } = [];
         public Interception? Interception { get; set; }
         public KickBlock? KickBlock { get; set; }

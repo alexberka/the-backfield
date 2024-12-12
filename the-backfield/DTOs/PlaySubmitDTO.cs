@@ -7,7 +7,7 @@ namespace TheBackfield.DTOs
     {
         public int Id { get; set; }
         [Required]
-        public int PrevPlayId { get; set; } // Reserve 1 for Game Start
+        public int PrevPlayId { get; set; } // Reserve -1 for Game Start
         [Required]
         public int GameId { get; set; }
         [Required]
@@ -36,6 +36,7 @@ namespace TheBackfield.DTOs
         public bool KickGood { get; set; } = false;
         public bool KickTouchback { get; set; } = false;
         public bool KickFake { get; set; } = false;
+        public int? TouchdownPlayerId { get; set; } = null;
         public bool ExtraPoint { get; set; } = false;
         public bool Conversion { get; set; } = false;
         public int? ExtraPointKickerId { get; set; } = null;
@@ -47,6 +48,8 @@ namespace TheBackfield.DTOs
         public bool ConversionGood { get; set; } = false;
         public bool DefensiveConversion { get; set; } = false;
         public int? ConversionReturnerId { get; set; } = null;
+        public bool Safety { get; set; } = false;
+        public int? CedingPlayerId { get; set; } = null;
         public List<FumbleSubmitDTO> Fumbles { get; set; } = [];
         public int? InterceptedById { get; set; } = null;
         public int? InterceptedAt { get; set; } = null;

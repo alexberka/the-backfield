@@ -1,4 +1,5 @@
-﻿using TheBackfield.DTOs;
+﻿using the_backfield.Interfaces.PlayEntities;
+using TheBackfield.DTOs;
 using TheBackfield.DTOs.PlayEntities;
 using TheBackfield.Interfaces;
 using TheBackfield.Interfaces.PlayEntities;
@@ -19,9 +20,11 @@ namespace TheBackfield.Services
         private readonly IPuntRepository _puntRepository;
         private readonly IFieldGoalRepository _fieldGoalRepository;
         private readonly IKickBlockRepository _kickBlockRepository;
+        private readonly ITouchdownRepository _touchdownRepository;
         private readonly IExtraPointRepository _extraPointRepository;
         private readonly IConversionRepository _conversionRepository;
         private readonly IInterceptionRepository _interceptionRepository;
+        private readonly ISafetyRepository _safetyRepository;
         private readonly IFumbleRepository _fumbleRepository;
         private readonly ILateralRepository _lateralRepository;
         private readonly IPlayPenaltyRepository _playPenaltyRepository;
@@ -40,9 +43,11 @@ namespace TheBackfield.Services
             IPuntRepository puntRepository,
             IFieldGoalRepository fieldGoalRepository,
             IKickBlockRepository kickBlockRepository,
+            ITouchdownRepository touchdownRepository,
             IExtraPointRepository extraPointRepository,
             IConversionRepository conversionRepository,
             IInterceptionRepository interceptionRepository,
+            ISafetyRepository safetyRepository,
             IFumbleRepository fumbleRepository,
             ILateralRepository lateralRepository,
             IPlayPenaltyRepository playPenaltyRepository,
@@ -61,9 +66,11 @@ namespace TheBackfield.Services
             _puntRepository = puntRepository;
             _fieldGoalRepository = fieldGoalRepository;
             _kickBlockRepository = kickBlockRepository;
+            _touchdownRepository = touchdownRepository;
             _extraPointRepository = extraPointRepository;
             _conversionRepository = conversionRepository;
             _interceptionRepository = interceptionRepository;
+            _safetyRepository = safetyRepository;
             _fumbleRepository = fumbleRepository;
             _lateralRepository = lateralRepository;
             _playPenaltyRepository = playPenaltyRepository;
@@ -263,10 +270,11 @@ namespace TheBackfield.Services
             if (playSubmit.FieldGoal && playSubmit.KickGood)
             {
                 if (playSubmit.PasserId != null || playSubmit.RusherId != null || playSubmit.TacklerIds.Count > 0
-                    || playSubmit.InterceptedById != null || playSubmit.PassDefenderIds.Count > 0 || playSubmit.ExtraPoint
-                    || playSubmit.Conversion)
+                    || playSubmit.InterceptedById != null || playSubmit.PassDefenderIds.Count > 0 
+                    || playSubmit.TouchdownPlayerId != null || playSubmit.ExtraPoint || playSubmit.Conversion
+                    || playSubmit.Safety)
                 {
-                    return new PlayResponseDTO { ErrorMessage = "A FieldGoal with KickGood == true cannot occur alongside pass, rush, extra point, conversion, interception, tackle, or pass defense statistics" };
+                    return new PlayResponseDTO { ErrorMessage = "A FieldGoal with KickGood == true cannot occur alongside pass, rush, touchdown, extra point, conversion, interception, safety, tackle, or pass defense statistics" };
                 }
                 if (playSubmit.KickFake)
                 {
@@ -320,6 +328,36 @@ namespace TheBackfield.Services
                 if (Math.Abs(playSubmit.KickBlockRecoveredAt ?? 0) > 60)
                 {
                     return new PlayResponseDTO { ErrorMessage = "KickBlockRecoveredAt must be between -60 (back of home team endzone) and 60 (back of away team endzone)" };
+                }
+            }
+
+            // Validate Touchdown data
+            if (playSubmit.TouchdownPlayerId != null)
+            {
+                if (playSubmit.Safety || playSubmit.KickGood)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Touchdown cannot occur on play with a safety or a made field goal" };
+                }
+                if (Math.Abs(playSubmit.FieldPositionEnd ?? 0) != 50)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Touchdown can only occur on play where FieldPositionEnd is -50 (home team endzone) or 50 (away team endzone)" };
+                }
+                Player? player = await _playerRepository.GetSinglePlayerAsync(playSubmit.TouchdownPlayerId ?? 0);
+                if (player == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = $"TouchdownPlayerId is invalid" };
+                }
+                if (player.TeamId != offensiveTeamId && player.TeamId != defensiveTeamId)
+                {
+                    return new PlayResponseDTO { ErrorMessage = $"TouchdownPlayerId is invalid, player is not on either team" };
+                }
+                if (player.TeamId == game.HomeTeamId && playSubmit.FieldPositionEnd != 50)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "TouchdownPlayerId is invalid, player on home team can only score touchdown where FieldPositionEnd = 50" };
+                }
+                if (player.TeamId == game.AwayTeamId && playSubmit.FieldPositionEnd != -50)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "TouchdownPlayerId is invalid, player on away team can only score touchdown where FieldPositionEnd = -50" };
                 }
             }
 
@@ -431,6 +469,39 @@ namespace TheBackfield.Services
                 if (Math.Abs(playSubmit.InterceptedAt ?? 0) > 60)
                 {
                     return new PlayResponseDTO { ErrorMessage = "InterceptedAt must be between -60 (back of home team endzone) and 60 (back of away team endzone)" };
+                }
+            }
+
+            // Validate Safety data
+            if (playSubmit.Safety)
+            {
+                if (playSubmit.TouchdownPlayerId != null || playSubmit.KickGood)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Safety cannot occur on play with a touchdown or a made field goal" };
+                }
+                if (Math.Abs(playSubmit.FieldPositionEnd ?? 0) != 50)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Safety can only occur on play where FieldPositionEnd is -50 (home team endzone) or 50 (away team endzone)" };
+                }
+                if (playSubmit.CedingPlayerId != null)
+                {
+                    Player? player = await _playerRepository.GetSinglePlayerAsync(playSubmit.CedingPlayerId ?? 0);
+                    if (player == null)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"CedingPlayerId is invalid" };
+                    }
+                    if (player.TeamId != offensiveTeamId && player.TeamId != defensiveTeamId)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = $"CedingPlayerId is invalid, player is not on either team" };
+                    }
+                    if (player.TeamId == game.HomeTeamId && playSubmit.FieldPositionEnd != -50)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "CedingPlayerId is invalid, player on home team can only give up a safety where FieldPositionEnd = -50" };
+                    }
+                    if (player.TeamId == game.AwayTeamId && playSubmit.FieldPositionEnd != 50)
+                    {
+                        return new PlayResponseDTO { ErrorMessage = "CedingPlayerId is invalid, player on away team can only give up a safety where FieldPositionEnd = 50" };
+                    }
                 }
             }
 
@@ -652,6 +723,16 @@ namespace TheBackfield.Services
                 }
             }
 
+            // Create Touchdown
+            if (playSubmit.TouchdownPlayerId != null)
+            {
+                Touchdown? touchdown = await _touchdownRepository.CreateTouchdownAsync(playSubmit);
+                if (touchdown == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Touchdown failed to create, process terminated" };
+                }
+            }
+
             // Create ExtraPoint
             if (playSubmit.ExtraPoint)
             {
@@ -679,6 +760,16 @@ namespace TheBackfield.Services
                 if (interception == null)
                 {
                     return new PlayResponseDTO { ErrorMessage = "Interception failed to create, process terminated" };
+                }
+            }
+
+            // Create Safety
+            if (playSubmit.Safety)
+            {
+                Safety? safety = await _safetyRepository.CreateSafetyAsync(playSubmit);
+                if (safety == null)
+                {
+                    return new PlayResponseDTO { ErrorMessage = "Safety failed to create, process terminated" };
                 }
             }
 
@@ -820,6 +911,12 @@ namespace TheBackfield.Services
                 return (0, true);
             }
                 
+            if ((playSubmit.TouchdownPlayerId != null && hasPossession[0] != playSubmit.TouchdownPlayerId)
+                || (playSubmit.CedingPlayerId != null && hasPossession[0] != playSubmit.CedingPlayerId))
+            {
+                return (0, true);
+            }
+
             Player? player = await _playerRepository.GetSinglePlayerAsync(hasPossession[0]);
             if (player == null || (player.TeamId != homeTeamId && player.TeamId != awayTeamId))
             {
