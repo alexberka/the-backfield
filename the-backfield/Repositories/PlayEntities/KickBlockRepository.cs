@@ -25,7 +25,7 @@ public class KickBlockRepository : IKickBlockRepository
         if (playSubmit.KickBlockedById != null)
         {
             Player? blocker = await _dbContext.Players.FindAsync(playSubmit.KickBlockedById);
-            if (blocker != null)
+            if (blocker == null)
             {
                 return null;
             }
@@ -33,7 +33,7 @@ public class KickBlockRepository : IKickBlockRepository
         if (playSubmit.KickBlockRecoveredById != null)
         {
             Player? recovery = await _dbContext.Players.FindAsync(playSubmit.KickBlockRecoveredById);
-            if (recovery != null)
+            if (recovery == null)
             {
                 return null;
             }
