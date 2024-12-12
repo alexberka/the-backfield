@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Json;
+using the_backfield.Interfaces.PlayEntities;
 using TheBackfield.Data;
 using TheBackfield.Endpoints;
 using TheBackfield.Interfaces;
@@ -44,7 +45,9 @@ builder.Services.AddScoped<IPassRepository, PassRepository>();
 builder.Services.AddScoped<IPlayPenaltyRepository, PlayPenaltyRepository>();
 builder.Services.AddScoped<IPuntRepository, PuntRepository>();
 builder.Services.AddScoped<IRushRepository, RushRepository>();
+builder.Services.AddScoped<ISafetyRepository, SafetyRepository> ();
 builder.Services.AddScoped<ITackleRepository, TackleRepository>();
+builder.Services.AddScoped<ITouchdownRepository, TouchdownRepository>();
 
 builder.Services.AddScoped<IPlayerService, PlayerService>();
 builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
