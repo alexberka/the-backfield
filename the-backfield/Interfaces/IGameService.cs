@@ -1,5 +1,6 @@
 using TheBackfield.Models;
 using TheBackfield.DTOs;
+using TheBackfield.DTOs.GameStream;
 
 namespace TheBackfield.Interfaces;
 

@@ -77,8 +77,8 @@ public class GameRepository : IGameRepository
             AwayTeamId = newGameSubmit.AwayTeamId,
             AwayTeamScore = newGameSubmit.AwayTeamScore ?? 0,
             GameStart = newGameSubmit.GameStart ?? DateTime.MinValue,
-            GamePeriods = newGameSubmit.GamePeriods ?? 1,
-            PeriodLength = newGameSubmit.PeriodLength ?? 0,
+            GamePeriods = newGameSubmit.GamePeriods ?? 4,
+            PeriodLength = newGameSubmit.PeriodLength ?? 900,
             UserId = userId,
         };
 

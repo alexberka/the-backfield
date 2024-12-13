@@ -1,3 +1,4 @@
+using TheBackfield.DTOs.GameStream;
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
 using TheBackfield.Models;

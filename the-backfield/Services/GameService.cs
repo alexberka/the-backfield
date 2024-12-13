@@ -1,4 +1,4 @@
-using the_backfield.Migrations;
+using TheBackfield.DTOs.GameStream;
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
 using TheBackfield.Models;
@@ -93,21 +93,6 @@ public class GameService : IGameService
         {
             return null;
         }
-
-        List<Play> scoringPlays = game.Plays
-            .Where(p => Math.Abs(p.FieldPositionEnd ?? 0) == 50 && !p.Penalties.Any(pe => pe.NoPlay == true && pe.Enforced == true))
-            .ToList();
-
-        //foreach (Play play in scoringPlays)
-        //{
-
-        //}
-
-        Play? currentPlay = game.Plays.SingleOrDefault(p => !game.Plays.Any(gp => gp.PrevPlayId == p.Id));
-
-        Play? prevPlay = game.Plays.SingleOrDefault(p => p.Id == currentPlay?.PrevPlayId);  
-
-        List<Play> currentDrive = [];
 
         GameStreamDTO gameStream = new(game);
 

@@ -1,7 +1,6 @@
 ﻿using TheBackfield.Models;
-using TheBackfield.Models.PlayEntities;
 
-namespace TheBackfield.DTOs
+namespace TheBackfield.DTOs.GameStream
 {
     public class GameStreamPlayDTO
     {
@@ -22,9 +21,9 @@ namespace TheBackfield.DTOs
         public int? GamePeriod { get { return _play.GamePeriod; } }
         public string Notes { get { return _play.Notes; } }
         public object? Pass
-        { 
-            get 
-            { 
+        {
+            get
+            {
                 if (_play.Pass == null)
                 {
                     return null;
@@ -35,13 +34,13 @@ namespace TheBackfield.DTOs
                     _play.Pass.Passer,
                     _play.Pass.Receiver,
                     _play.Pass.Completion
-                }; 
-            } 
+                };
+            }
         }
         public object? Rush
-        { 
-            get 
-            { 
+        {
+            get
+            {
                 if (_play.Rush == null)
                 {
                     return null;
@@ -50,31 +49,31 @@ namespace TheBackfield.DTOs
                 return new
                 {
                     _play.Rush.Rusher,
-                }; 
-            } 
+                };
+            }
         }
         public List<Player?> Tacklers
         {
-            get 
-            { 
+            get
+            {
                 if (_play.Tacklers.Count == 0)
                 {
                     return [];
                 }
 
-                return _play.Tacklers.Select(t => t.Tackler).ToList(); 
+                return _play.Tacklers.Select(t => t.Tackler).ToList();
             }
         }
         public List<Player?> PassDefenders
         {
-            get 
-            { 
+            get
+            {
                 if (_play.PassDefenders.Count == 0)
                 {
                     return [];
                 }
 
-                return _play.PassDefenders.Select(t => t.Defender).ToList(); 
+                return _play.PassDefenders.Select(t => t.Defender).ToList();
             }
         }
         public object? Kickoff
@@ -132,6 +131,21 @@ namespace TheBackfield.DTOs
                 };
             }
         }
+        public object? Touchdown
+        {
+            get
+            {
+                if (_play.Touchdown == null)
+                {
+                    return null;
+                }
+
+                return new
+                {
+                    _play.Touchdown.Player
+                };
+            }
+        }
         public object? ExtraPoint
         {
             get
@@ -168,6 +182,21 @@ namespace TheBackfield.DTOs
                     _play.Conversion.Good,
                     _play.Conversion.DefensiveConversion,
                     _play.Conversion.Returner,
+                };
+            }
+        }
+        public object? Safety
+        {
+            get
+            {
+                if (_play.Safety == null)
+                {
+                    return null;
+                }
+
+                return new
+                {
+                    _play.Safety.CedingPlayer
                 };
             }
         }
@@ -245,7 +274,7 @@ namespace TheBackfield.DTOs
                 return laterals;
             }
         }
-        public List<object> Penalties
+        public List<GameStreamPlayPenaltyDTO> Penalties
         {
             get
             {
@@ -254,20 +283,7 @@ namespace TheBackfield.DTOs
                     return [];
                 }
 
-                List<object> penalties = (List<object>)_play.Penalties.Select(p => new
-                {
-                    Penalty = p.Penalty.Name,
-                    p.Player,
-                    p.TeamId,
-                    p.Enforced,
-                    p.EnforcedFrom,
-                    p.NoPlay,
-                    p.LossOfDown,
-                    p.AutoFirstDown,
-                    p.Yardage
-                });
-
-                return penalties;
+                return _play.Penalties.Select(p => new GameStreamPlayPenaltyDTO(p)).ToList();
             }
         }
     }
