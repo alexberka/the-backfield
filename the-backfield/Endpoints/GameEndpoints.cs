@@ -1,3 +1,4 @@
+using TheBackfield.DTOs.GameStream;
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
 using TheBackfield.Models;
@@ -32,6 +33,19 @@ public static class GameEndpoints
             }
 
             return Results.Ok(response.Game);
+        })
+            .WithOpenApi()
+            .Produces<Game>(StatusCodes.Status200OK);
+
+        group.MapGet("/games/{gameId}/game-stream", async (IGameService gameService, int gameId) =>
+        {
+            GameStreamDTO? gameStream = await gameService.GetGameStreamAsync(gameId);
+            if (gameStream == null)
+            {
+                return Results.BadRequest("Invalid gameId");
+            }
+
+            return Results.Ok(gameStream);
         })
             .WithOpenApi()
             .Produces<Game>(StatusCodes.Status200OK);

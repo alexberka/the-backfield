@@ -23,6 +23,52 @@ public class GameRepository : IGameRepository
             .ToListAsync();
     }
 
+    public async Task<Game?> GetSingleGameAllStatsAsync(int gameId)
+    {
+        return await _dbContext.Games
+            .AsNoTracking()
+            .Include(g => g.HomeTeam)
+                .ThenInclude(ht => ht.Players)
+            .Include(g => g.AwayTeam)
+                .ThenInclude(ht => ht.Players)
+            .Include(g => g.GameStats)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Pass)
+                    .ThenInclude(p => p.Passer)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Rush)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Tacklers)
+                    .ThenInclude(t => t.Tackler)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.PassDefenders)
+                    .ThenInclude(pd => pd.Defender)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Kickoff)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Punt)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.FieldGoal)
+            .Include(g => g.Plays)
+                .ThenInclude(g => g.Touchdown)
+            .Include(g => g.Plays)
+                .ThenInclude(g => g.ExtraPoint)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Conversion)
+            .Include(g => g.Plays)
+                .ThenInclude(g => g.Safety)
+            .Include(g => g.Plays)
+                .ThenInclude(g => g.Fumbles)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Interception)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.KickBlock)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Laterals)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Penalties)
+            .SingleOrDefaultAsync(g => g.Id == gameId);
+    }
     public async Task<Game?> GetSingleGameAsync(int gameId)
     {
         return await _dbContext.Games
@@ -31,40 +77,40 @@ public class GameRepository : IGameRepository
             .Include(g => g.AwayTeam)
             .Include(g => g.GameStats)
             .Include(g => g.Plays)
-                .ThenInclude(g => g.PrevPlay)
-            .Include(g => g.Plays)
-                .ThenInclude(g => g.Pass)
+                .ThenInclude(p => p.Pass)
                     .ThenInclude(p => p.Passer)
             .Include(g => g.Plays)
-                .ThenInclude(g => g.Rush)
+                .ThenInclude(p => p.Rush)
             .Include(g => g.Plays)
-                .ThenInclude(g => g.Tacklers)
+                .ThenInclude(p => p.Tacklers)
+                    .ThenInclude(t => t.Tackler)
             .Include(g => g.Plays)
-                .ThenInclude(g => g.PassDefenders)
+                .ThenInclude(p => p.PassDefenders)
+                    .ThenInclude(pd => pd.Defender)
             .Include(g => g.Plays)
-                .ThenInclude(g => g.Kickoff)
+                .ThenInclude(p => p.Kickoff)
             .Include(g => g.Plays)
-                .ThenInclude(g => g.Punt)
+                .ThenInclude(p => p.Punt)
             .Include(g => g.Plays)
-                .ThenInclude(g => g.FieldGoal)
+                .ThenInclude(p => p.FieldGoal)
             .Include(g => g.Plays)
                 .ThenInclude(g => g.Touchdown)
             .Include(g => g.Plays)
                 .ThenInclude(g => g.ExtraPoint)
             .Include(g => g.Plays)
-                .ThenInclude(g => g.Conversion)
+                .ThenInclude(p => p.Conversion)
             .Include(g => g.Plays)
                 .ThenInclude(g => g.Safety)
             .Include(g => g.Plays)
                 .ThenInclude(g => g.Fumbles)
             .Include(g => g.Plays)
-                .ThenInclude(g => g.Interception)
+                .ThenInclude(p => p.Interception)
             .Include(g => g.Plays)
-                .ThenInclude(g => g.KickBlock)
+                .ThenInclude(p => p.KickBlock)
             .Include(g => g.Plays)
-                .ThenInclude(g => g.Laterals)
+                .ThenInclude(p => p.Laterals)
             .Include(g => g.Plays)
-                .ThenInclude(g => g.Penalties)
+                .ThenInclude(p => p.Penalties)
             .SingleOrDefaultAsync(g => g.Id == gameId);
     }
 
@@ -77,8 +123,8 @@ public class GameRepository : IGameRepository
             AwayTeamId = newGameSubmit.AwayTeamId,
             AwayTeamScore = newGameSubmit.AwayTeamScore ?? 0,
             GameStart = newGameSubmit.GameStart ?? DateTime.MinValue,
-            GamePeriods = newGameSubmit.GamePeriods ?? 1,
-            PeriodLength = newGameSubmit.PeriodLength ?? 0,
+            GamePeriods = newGameSubmit.GamePeriods ?? 4,
+            PeriodLength = newGameSubmit.PeriodLength ?? 900,
             UserId = userId,
         };
 

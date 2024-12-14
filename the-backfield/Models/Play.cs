@@ -22,7 +22,7 @@ namespace TheBackfield.Models
         public Pass? Pass { get; set; }
         public Rush? Rush { get; set; }
         public List<Tackle> Tacklers { get; set; } = [];
-        public List<PassDefense> PassDefenders { get; set; }
+        public List<PassDefense> PassDefenders { get; set; } = [];
         public Kickoff? Kickoff { get; set; }
         public Punt? Punt { get; set; }
         public FieldGoal? FieldGoal { get; set; }
