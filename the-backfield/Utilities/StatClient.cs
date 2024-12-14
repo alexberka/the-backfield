@@ -180,5 +180,33 @@ namespace TheBackfield.Utilities
             
             return (down, toGain, fieldPosition, teamId);
         }
+
+        public static string FieldPositionText(int? fieldPosition, string homeTeam, string awayTeam)
+        {
+            if (fieldPosition == null)
+            {
+                return "";
+            }
+            string asText = "";
+            if (fieldPosition > 0)
+            {
+                asText += $"{awayTeam} ";
+            }
+            else if (fieldPosition < 0)
+            {
+                asText += $"{homeTeam} ";
+            }
+            int fieldNumber = 50 - Math.Abs(fieldPosition ?? 0);
+            if (fieldNumber <= 0)
+            {
+                asText += "endzone";
+            }
+            else
+            {
+                asText += $"{fieldNumber}";
+            }
+
+            return asText;
+        }
     }
 }
