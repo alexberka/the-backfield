@@ -23,6 +23,52 @@ public class GameRepository : IGameRepository
             .ToListAsync();
     }
 
+    public async Task<Game?> GetSingleGameAllStatsAsync(int gameId)
+    {
+        return await _dbContext.Games
+            .AsNoTracking()
+            .Include(g => g.HomeTeam)
+                .ThenInclude(ht => ht.Players)
+            .Include(g => g.AwayTeam)
+                .ThenInclude(ht => ht.Players)
+            .Include(g => g.GameStats)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Pass)
+                    .ThenInclude(p => p.Passer)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Rush)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Tacklers)
+                    .ThenInclude(t => t.Tackler)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.PassDefenders)
+                    .ThenInclude(pd => pd.Defender)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Kickoff)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Punt)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.FieldGoal)
+            .Include(g => g.Plays)
+                .ThenInclude(g => g.Touchdown)
+            .Include(g => g.Plays)
+                .ThenInclude(g => g.ExtraPoint)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Conversion)
+            .Include(g => g.Plays)
+                .ThenInclude(g => g.Safety)
+            .Include(g => g.Plays)
+                .ThenInclude(g => g.Fumbles)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Interception)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.KickBlock)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Laterals)
+            .Include(g => g.Plays)
+                .ThenInclude(p => p.Penalties)
+            .SingleOrDefaultAsync(g => g.Id == gameId);
+    }
     public async Task<Game?> GetSingleGameAsync(int gameId)
     {
         return await _dbContext.Games

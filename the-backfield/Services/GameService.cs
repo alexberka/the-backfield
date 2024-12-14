@@ -88,7 +88,7 @@ public class GameService : IGameService
 
     public async Task<GameStreamDTO?> GetGameStreamAsync(int gameId)
     {
-        Game? game = await _gameRepository.GetSingleGameAsync(gameId);
+        Game? game = await _gameRepository.GetSingleGameAllStatsAsync(gameId);
         if (game == null)
         {
             return null;

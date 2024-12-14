@@ -1088,7 +1088,7 @@ namespace TheBackfield.Services
                 segments.Add(segment);
             }
 
-            //Account for pass plays (+ interceptions and sacks)
+            //Account for pass plays (+ interceptions, pass defenses, & sacks)
             if (play.Pass != null)
             {
                 PlaySegmentDTO segment = new()

@@ -1,4 +1,5 @@
-﻿using TheBackfield.Models;
+﻿using System.Text.Json.Serialization;
+using TheBackfield.Models;
 using TheBackfield.Utilities;
 
 namespace TheBackfield.DTOs.GameStream
@@ -93,8 +94,11 @@ namespace TheBackfield.DTOs.GameStream
 
 
         }
+        public Team? HomeTeam { get { return _game.HomeTeam; } }
         public int HomeTeamScore { get { return _homeTeamScore; } }
+        public Team? AwayTeam { get { return _game.AwayTeam; } }
         public int AwayTeamScore { get { return _awayTeamScore; } }
+        [JsonIgnore]
         public List<GameStreamPlayDTO> Drive
         {
             get
@@ -117,6 +121,7 @@ namespace TheBackfield.DTOs.GameStream
             }
         }
         public int DriveLength { get; set; }
+        [JsonIgnore]
         public GameStreamPlayDTO? PrevPlay
         {
             get
@@ -134,6 +139,7 @@ namespace TheBackfield.DTOs.GameStream
                 return new GameStreamPlayDTO(prevPlay);
             }
         }
+        [JsonIgnore]
         public object? CurrentPlay
         {
             get
