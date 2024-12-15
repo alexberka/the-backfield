@@ -1138,12 +1138,12 @@ namespace TheBackfield.Services
                     if (play.PassDefenders.Count() > 0)
                     {
                         segment.SegmentText += " Broken up by ";
-                        for (int i = 0; i < play.Tacklers.Count(); i++)
+                        for (int i = 0; i < play.PassDefenders.Count(); i++)
                         {
-                            Player? tackler = play.Tacklers[i].Tackler;
-                            if (tackler != null)
+                            Player? defender = play.PassDefenders[i].Defender;
+                            if (defender != null)
                             {
-                                segment.SegmentText += $"{tackler.FirstName?.Substring(0, 1).ToUpper()}. {tackler.LastName}";
+                                segment.SegmentText += $"{defender.FirstName?.Substring(0, 1).ToUpper()}. {defender.LastName}";
                             }
                             else
                             {

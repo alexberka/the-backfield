@@ -111,10 +111,12 @@ namespace TheBackfield.Utilities
 
                     gainsPossession.Add(play.Pass?.Passer);
                     gainsPossession.Add(play.Pass?.Completion ?? false ? play.Pass?.Receiver ?? null : null);
+                    cedesPossession.Add(play.Pass?.Completion ?? false ? play.Pass?.Passer ?? null : null);
                     gainsPossession.Add(play.Rush?.Rusher);
                     gainsPossession.Add(play.Punt?.Returner);
                     gainsPossession.Add(play.Kickoff?.Returner);
                     gainsPossession.Add(play.Interception?.InterceptedBy);
+                    cedesPossession.Add(play.Interception != null ? play.Pass?.Passer ?? null : null);
                     gainsPossession.Add(play.KickBlock?.RecoveredBy);
                     foreach (Fumble fumble in play.Fumbles)
                     {
@@ -136,6 +138,10 @@ namespace TheBackfield.Utilities
                             gainsPossession.Remove(carrier);
                         }
                     }
+                    if (gainsPossession.Count() == 1)
+                    {
+                        teamId = gainsPossession[0]?.TeamId ?? 0;
+                    }
 
                     if (gainsPossession.Count == 0)
                     {
@@ -153,7 +159,7 @@ namespace TheBackfield.Utilities
                         }
                     }
                 }
-                if (teamId != play.TeamId)
+                if (teamId != play.TeamId && teamId != 0)
                 {
                     down = 1;
                     toGain = Math.Abs(fieldPosition + (teamSigns[teamId] * 10) ?? 0) > 50 ? teamSigns[teamId] * 50 : fieldPosition + (teamSigns[teamId] * 10);

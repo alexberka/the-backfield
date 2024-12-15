@@ -3,6 +3,7 @@ using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
 using TheBackfield.Models;
 using TheBackfield.Utilities;
+using System.Xml.Linq;
 
 namespace TheBackfield.Services;
 
@@ -94,7 +95,76 @@ public class GameService : IGameService
             return null;
         }
 
-        GameStreamDTO gameStream = new(game);
+        int down = 0;
+        int? toGain = null;
+        int? fieldPositionEnd = null;
+        int? nextTeamId = null;
+
+        int currentPlayId = game.Plays.SingleOrDefault(p => !game.Plays.Any(gp => gp.PrevPlayId == p.Id))?.Id ?? 0;
+        Play? currentPlay = await _playRepository.GetSinglePlayAsync(currentPlayId);
+        var (homeTeamScore, awayTeamScore) = StatClient.ParseScore(game);
+
+        if (currentPlay != null)
+        {
+            (down, toGain, fieldPositionEnd, nextTeamId) = StatClient.ParseFieldPosition(currentPlay, game.HomeTeamId, game.AwayTeamId);
+        }
+
+        int? clockStart = null;
+        int? gamePeriod = null;
+        int playCheckId = currentPlay?.Id ?? 0;
+        do
+        {
+            Play? checkPlay = game.Plays.SingleOrDefault(p => p.Id == playCheckId);
+            if (checkPlay == null)
+            {
+                clockStart = game.PeriodLength;
+                gamePeriod = 1;
+            }
+            else
+            {
+                if (gamePeriod == null && checkPlay.GamePeriod != null)
+                {
+                    gamePeriod = checkPlay.GamePeriod;
+                }
+                if (checkPlay.ClockEnd != null)
+                {
+                    clockStart = checkPlay.ClockEnd;
+                }
+                else if (checkPlay.ClockStart != null)
+                {
+                    clockStart = checkPlay.ClockStart;
+                }
+                else if (gamePeriod != null && (checkPlay.GamePeriod ?? gamePeriod) != gamePeriod)
+                {
+                    clockStart = game.PeriodLength;
+                }
+                else
+                {
+                    playCheckId = checkPlay.PrevPlayId ?? 0;
+                }
+            }
+        } while (clockStart == null || gamePeriod == null);
+
+        if (clockStart == 0)
+        {
+            gamePeriod += 1;
+            clockStart = game.PeriodLength;
+        }
+
+
+        PlaySubmitDTO nextPlay = new()
+        {
+            PrevPlayId = currentPlay?.Id ?? -1,
+            GameId = game.Id,
+            TeamId = nextTeamId ?? 0,
+            FieldPositionStart = fieldPositionEnd,
+            Down = down,
+            ToGain = toGain,
+            ClockStart = clockStart,
+            GamePeriod = gamePeriod
+        };
+
+        GameStreamDTO gameStream = new(game, nextPlay);
 
         return gameStream;
     }
