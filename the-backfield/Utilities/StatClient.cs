@@ -79,7 +79,7 @@ namespace TheBackfield.Utilities
 
             if (enforcedPenalties.Any(ep => ep.NoPlay == true) && !enforcedPenalties.Any(ep => ep.LossOfDown == true))
             {
-                if (play.Kickoff == null && (enforcedPenalties.Any(ep => ep.AutoFirstDown == true) || (fieldPosition - toGain) * teamSigns[teamId] > 0))
+                if (play.Kickoff == null && (enforcedPenalties.Any(ep => ep.AutoFirstDown == true) || (fieldPosition - toGain) * teamSigns[teamId] >= 0))
                 {
                     down = 1;
                     toGain = Math.Abs((fieldPosition + (teamSigns[teamId] * 10)) ?? 0) > 50 ? teamSigns[teamId] * 50 : fieldPosition + (teamSigns[teamId] * 10);
