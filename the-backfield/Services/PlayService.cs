@@ -1316,6 +1316,15 @@ namespace TheBackfield.Services
                 return (0, true);
             }
 
+            // If no players have received or relinquished possession and there is an enforced NoPlay penalty, then
+            // penalty is pre-snap and lack of possession chain is valid
+            if (hasPossession.Count == 0
+                && cedesPossession.Count == 0
+                && playSubmit.Penalties.Any((pp) => pp.Enforced == true && pp.NoPlay == true))
+            {
+                return (playSubmit.TeamId, false);
+            }
+
             if (hasPossession.Count == 0)
             {
                 if (playSubmit.FieldGoal && playSubmit.KickGood)
