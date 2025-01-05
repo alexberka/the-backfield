@@ -82,7 +82,7 @@ namespace TheBackfield.Utilities
                 if (play.Kickoff == null && (enforcedPenalties.Any(ep => ep.AutoFirstDown == true) || (fieldPosition - toGain) * teamSigns[teamId] > 0))
                 {
                     down = 1;
-                    toGain = fieldPosition + (teamSigns[teamId] * 10) > teamSigns[teamId] * 50 ? teamSigns[teamId] * 50 : fieldPosition + (teamSigns[teamId] * 10);
+                    toGain = Math.Abs((fieldPosition + (teamSigns[teamId] * 10)) ?? 0) > 50 ? teamSigns[teamId] * 50 : fieldPosition + (teamSigns[teamId] * 10);
                 }
             }
             else if (play.Safety != null || play.Touchdown != null || play.FieldGoal?.Good == true)

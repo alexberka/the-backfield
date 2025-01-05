@@ -151,13 +151,18 @@ public class GameService : IGameService
             clockStart = game.PeriodLength;
         }
 
+        int? nextFieldPositionStart = null;
+        if (currentPlay?.Touchdown != null || currentPlay?.Safety != null || currentPlay?.FieldGoal?.Good == true)
+        {
+            nextFieldPositionStart = nextTeamId == game.HomeTeam?.Id ? -15 : 15;
+        }
 
         PlaySubmitDTO nextPlay = new()
         {
             PrevPlayId = currentPlay?.Id ?? -1,
             GameId = game.Id,
             TeamId = nextTeamId ?? 0,
-            FieldPositionStart = fieldPositionEnd,
+            FieldPositionStart = nextFieldPositionStart ?? fieldPositionEnd,
             Down = down,
             ToGain = toGain,
             ClockStart = clockStart,
@@ -165,6 +170,63 @@ public class GameService : IGameService
         };
 
         GameStreamDTO gameStream = new(game, nextPlay);
+
+        gameStream.HomeTeamScore = homeTeamScore;
+        gameStream.AwayTeamScore = awayTeamScore;
+
+        List<Play> drive = [currentPlay ?? new()];
+
+        bool driveFound = false;
+
+        while (drive[0].Kickoff == null && drive[0].PrevPlayId > 0 && !driveFound)
+        {
+            Play? previousPlay = game.Plays.SingleOrDefault((p) => p.Id == drive[0].PrevPlayId);
+            if (previousPlay == null)
+            {
+                driveFound = true;
+            }
+            else if (previousPlay.TeamId != nextTeamId && previousPlay.Kickoff == null)
+            {
+                driveFound = true;
+            }
+            else
+            {
+                drive.Insert(0, previousPlay);
+            }
+        }
+
+        gameStream.DrivePlays = drive.Count > 0 && drive[0].Kickoff != null ? drive.Count - 1 : drive.Count;
+        gameStream.DrivePositionStart = nextPlay.FieldPositionStart;
+        gameStream.DriveYards = 0;
+        gameStream.DriveTime = 0;
+
+        if (gameStream.DrivePlays > 0)
+        {
+            int driveTimeStart = 0;
+            int driveTimeEnd = (game.GamePeriods - (nextPlay.GamePeriod ?? 0)) * game.PeriodLength + (nextPlay.ClockStart ?? 0);
+
+            int firstPlay = 0;
+            if (drive[0].Kickoff != null)
+            {
+                firstPlay = 1;
+            }
+            gameStream.DrivePositionStart = drive[firstPlay].FieldPositionStart;
+
+            driveTimeStart = (game.GamePeriods - (drive[firstPlay].GamePeriod ?? 0)) * game.PeriodLength + (drive[firstPlay].ClockStart ?? 0);
+
+            gameStream.DriveTime = driveTimeStart - driveTimeEnd;
+            // If last play was a made field goal, or a turnover, count drive yards to start of last play
+            if ((drive[drive.Count - 1].FieldGoal?.Good ?? false)
+                || (nextTeamId != drive[drive.Count -1].TeamId))
+            {
+                gameStream.DriveYards = ((gameStream.DrivePositionStart - drive[drive.Count - 1].FieldPositionStart) * (currentPlay?.TeamId == game?.HomeTeamId ? -1 : 1)) ?? 0;
+            }
+            // else count to end
+            else
+            {
+                gameStream.DriveYards = (gameStream.DrivePositionStart - drive[drive.Count - 1].FieldPositionEnd * (currentPlay?.TeamId == game?.HomeTeamId ? -1 : 1)) ?? 0;
+            }
+        }
 
         return gameStream;
     }
