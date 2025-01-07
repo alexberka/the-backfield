@@ -20,29 +20,26 @@ public class GameRepository : IGameRepository
         return await _dbContext.Games
             .AsNoTracking()
             .Where(g => g.UserId == userId)
+            .Include(g => g.HomeTeam)
+            .Include(g => g.AwayTeam)
             .ToListAsync();
     }
 
     public async Task<Game?> GetSingleGameAllStatsAsync(int gameId)
     {
-        return await _dbContext.Games
+        Game? game = await _dbContext.Games
             .AsNoTracking()
             .Include(g => g.HomeTeam)
-                .ThenInclude(ht => ht.Players)
             .Include(g => g.AwayTeam)
-                .ThenInclude(ht => ht.Players)
             .Include(g => g.GameStats)
             .Include(g => g.Plays)
                 .ThenInclude(p => p.Pass)
-                    .ThenInclude(p => p.Passer)
             .Include(g => g.Plays)
                 .ThenInclude(p => p.Rush)
             .Include(g => g.Plays)
                 .ThenInclude(p => p.Tacklers)
-                    .ThenInclude(t => t.Tackler)
             .Include(g => g.Plays)
                 .ThenInclude(p => p.PassDefenders)
-                    .ThenInclude(pd => pd.Defender)
             .Include(g => g.Plays)
                 .ThenInclude(p => p.Kickoff)
             .Include(g => g.Plays)
@@ -68,6 +65,52 @@ public class GameRepository : IGameRepository
             .Include(g => g.Plays)
                 .ThenInclude(p => p.Penalties)
             .SingleOrDefaultAsync(g => g.Id == gameId);
+
+        if (game == null)
+        {
+            return null;
+        }
+        else
+        {
+            List<Player> homeTeamPlayers = await _dbContext.Players.Where(p => p.TeamId == game.HomeTeamId).ToListAsync();
+            List<Player> awayTeamPlayers = await _dbContext.Players.Where(p => p.TeamId == game.AwayTeamId).ToListAsync();
+            return new Game {
+                Id = game.Id,
+                HomeTeamId = game.HomeTeamId,
+                HomeTeam = new Team
+                {
+                    Id = game.HomeTeam.Id,
+                    LocationName = game.HomeTeam.LocationName,
+                    Nickname = game.HomeTeam.Nickname,
+                    Players = homeTeamPlayers,
+                    HomeField = game.HomeTeam.HomeField,
+                    HomeLocation = game.HomeTeam.HomeLocation,
+                    LogoUrl = game.HomeTeam.LogoUrl,
+                    ColorPrimaryHex = game.HomeTeam.ColorPrimaryHex,
+                    ColorSecondaryHex = game.HomeTeam.ColorSecondaryHex,
+                },
+                HomeTeamScore = game.HomeTeamScore,
+                AwayTeamId = game.AwayTeamId,
+                AwayTeam = new Team
+                {
+                    Id = game.AwayTeam.Id,
+                    LocationName = game.AwayTeam.LocationName,
+                    Nickname = game.AwayTeam.Nickname,
+                    Players = awayTeamPlayers,
+                    HomeField = game.AwayTeam.HomeField,
+                    HomeLocation = game.AwayTeam.HomeLocation,
+                    LogoUrl = game.AwayTeam.LogoUrl,
+                    ColorPrimaryHex = game.AwayTeam.ColorPrimaryHex,
+                    ColorSecondaryHex = game.AwayTeam.ColorSecondaryHex,
+                },
+                AwayTeamScore = game.AwayTeamScore,
+                Plays = game.Plays,
+                GameStart = game.GameStart,
+                GamePeriods = game.GamePeriods,
+                PeriodLength = game.PeriodLength,
+                GameStats = game.GameStats,
+            };
+        }
     }
     public async Task<Game?> GetSingleGameAsync(int gameId)
     {

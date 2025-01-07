@@ -152,9 +152,17 @@ public class GameService : IGameService
         }
 
         int? nextFieldPositionStart = null;
+        int? nextToGain = null;
+        // Following a score, next play starts on 35-yard line
         if (currentPlay?.Touchdown != null || currentPlay?.Safety != null || currentPlay?.FieldGoal?.Good == true)
         {
             nextFieldPositionStart = nextTeamId == game.HomeTeam?.Id ? -15 : 15;
+        }
+        // Following touchback on kickoff, next play starts on 30-yard line
+        if (currentPlay?.Kickoff != null && currentPlay.Kickoff.Touchback == true)
+        {
+            nextFieldPositionStart = nextTeamId == game.HomeTeam?.Id ? -20 : 20;
+            nextToGain = nextTeamId == game.HomeTeam?.Id ? -10 : 10;
         }
 
         PlaySubmitDTO nextPlay = new()
@@ -164,7 +172,7 @@ public class GameService : IGameService
             TeamId = nextTeamId ?? 0,
             FieldPositionStart = nextFieldPositionStart ?? fieldPositionEnd,
             Down = down,
-            ToGain = toGain,
+            ToGain = nextToGain ?? toGain,
             ClockStart = clockStart,
             GamePeriod = gamePeriod
         };
