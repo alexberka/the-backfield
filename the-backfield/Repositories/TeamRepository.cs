@@ -51,6 +51,7 @@ public class TeamRepository : ITeamRepository
     {
         return await _dbContext.Teams
             .Include(t => t.Players)
+                .ThenInclude(p => p.Positions)
             .SingleOrDefaultAsync(t => t.Id == teamId);
     }
 
