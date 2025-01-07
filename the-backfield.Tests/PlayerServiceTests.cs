@@ -1,11 +1,9 @@
-using Xunit;
 using Moq;
 
 using TheBackfield.DTOs;
 using TheBackfield.Services;
 using TheBackfield.Interfaces;
 using TheBackfield.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace TheBackfield.Tests
 {
@@ -56,7 +54,7 @@ namespace TheBackfield.Tests
             _mockUserRepository.Setup(repo => repo.GetUserBySessionKeyAsync(sessionKey)).ReturnsAsync(TestUser);
             _mockPlayerRepository.Setup(repo => repo.GetPlayersAsync(TestUser.Id)).ReturnsAsync(expectedPlayersList);
 
-            PlayerResponseDTO response = await _playerService.GetPlayersAsync(sessionKey);
+            ResponseDTO<List<Player>> response = await _playerService.GetPlayersAsync(sessionKey);
 
             Assert.False(response.Error);
         }
@@ -81,9 +79,9 @@ namespace TheBackfield.Tests
             _mockPlayerRepository.Setup(repo => repo.CreatePlayerAsync(newPlayerSubmitDTO, TestUser.Id)).ReturnsAsync(TestPlayer);
             _mockPlayerRepository.Setup(repo => repo.SetPlayerPositionsAsync(15, newPlayerSubmitDTO.PositionIds)).ReturnsAsync(TestPlayer);
 
-            PlayerResponseDTO actualResponse = await _playerService.CreatePlayerAsync(newPlayerSubmitDTO);
+            ResponseDTO<Player> actualResponse = await _playerService.CreatePlayerAsync(newPlayerSubmitDTO);
 
-            Assert.Equal(TestPlayer, actualResponse.Player);
+            Assert.Equal(TestPlayer, actualResponse.Resource);
         }
 
         [Fact]
@@ -139,9 +137,9 @@ namespace TheBackfield.Tests
             _mockPlayerRepository.Setup(repo => repo.UpdatePlayerAsync(updatePlayerSubmitDTO)).ReturnsAsync(updatedPlayer);
             _mockPlayerRepository.Setup(repo => repo.SetPlayerPositionsAsync(15, updatePlayerSubmitDTO.PositionIds)).ReturnsAsync(updatedPlayerAndPositions);
 
-            PlayerResponseDTO actualResponse = await _playerService.UpdatePlayerAsync(updatePlayerSubmitDTO);
+            ResponseDTO<Player> actualResponse = await _playerService.UpdatePlayerAsync(updatePlayerSubmitDTO);
 
-            Assert.Equal(updatedPlayerAndPositions, actualResponse.Player);
+            Assert.Equal(updatedPlayerAndPositions, actualResponse.Resource);
         }
 
         [Fact]
@@ -155,7 +153,7 @@ namespace TheBackfield.Tests
             _mockPlayerRepository.Setup(repo => repo.GetSinglePlayerAsync(playerId)).ReturnsAsync(TestPlayer);
             _mockPlayerRepository.Setup(repo => repo.DeletePlayerAsync(playerId)).ReturnsAsync(deleteReturn);
 
-            PlayerResponseDTO response = await _playerService.DeletePlayerAsync(playerId, sessionKey);
+            ResponseDTO<Player> response = await _playerService.DeletePlayerAsync(playerId, sessionKey);
 
             Assert.False(response.Error);
         }

@@ -1,8 +1,9 @@
 using TheBackfield.DTOs;
+using TheBackfield.Models;
 
 namespace TheBackfield.Interfaces;
 
 public interface IPositionService
 {
-    Task<PositionResponseDTO> GetPositionsAsync();
+    Task<ResponseDTO<List<Position>>> GetPositionsAsync();
 }

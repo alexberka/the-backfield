@@ -13,33 +13,33 @@ public static class PlayEndpoints
 
         group.MapGet("/plays/{playId}", async (IPlayService playService, int playId, string sessionKey) =>
         {
-            PlayResponseDTO response = await playService.GetSinglePlayAsync(playId, sessionKey);
+            ResponseDTO<Play> response = await playService.GetSinglePlayAsync(playId, sessionKey);
             if (response.Error)
             {
                 return response.ThrowError();
             };
 
-            return Results.Ok(response.Play);
+            return Results.Ok(response.Resource);
         })
             .WithOpenApi()
             .Produces<Play>(StatusCodes.Status200OK);
 
         group.MapPost("/plays", async (IPlayService playService, PlaySubmitDTO playSubmit) =>
         {
-            PlayResponseDTO response = await playService.CreatePlayAsync(playSubmit);
-            if (response.Error || response.Play == null)
+            ResponseDTO<Play> response = await playService.CreatePlayAsync(playSubmit);
+            if (response.Error || response.Resource == null)
             {
                 return response.ThrowError();
             }
 
-            return Results.Created($"/plays/{response.Play.Id}", response.Play);
+            return Results.Created($"/plays/{response.Resource.Id}", response.Resource);
         })
             .WithOpenApi()
             .Produces<Play>(StatusCodes.Status201Created);
 
         group.MapDelete("/plays/{playId}", async (IPlayService playService, int playId, string sessionKey) =>
         {
-            PlayResponseDTO response = await playService.DeletePlayAsync(playId, sessionKey);
+            ResponseDTO<Play> response = await playService.DeletePlayAsync(playId, sessionKey);
             if (response.Error)
             {
                 return response.ThrowError();

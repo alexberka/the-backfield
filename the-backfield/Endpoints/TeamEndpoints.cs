@@ -16,35 +16,25 @@ public static class TeamEndpoints
 
         group.MapGet("/teams", async (ITeamService teamService, string sessionKey) =>
         {
-            TeamResponseDTO readResponse = await teamService.GetTeamsBySessionKeyAsync(sessionKey);
-            if (readResponse.Unauthorized)
+            ResponseDTO<List<Team>> response = await teamService.GetTeamsBySessionKeyAsync(sessionKey);
+            if (response.Error)
             {
-                return Results.Unauthorized();
+                return response.ThrowError();
             }
-            return Results.Ok(readResponse.Teams);
+            return Results.Ok(response.Resource);
         })
             .WithOpenApi()
             .Produces<List<Team>>(StatusCodes.Status200OK);
 
         group.MapGet("/teams/{teamId}", async (ITeamService teamService, int teamId, string sessionKey) =>
         {
-            TeamResponseDTO response = await teamService.GetSingleTeamAsync(teamId, sessionKey);
-            if (response.NotFound)
+            ResponseDTO<Team> response = await teamService.GetSingleTeamAsync(teamId, sessionKey);
+            if (response.Error)
             {
-                return Results.NotFound(response.ErrorMessage);
+                return response.ThrowError();
             }
 
-            if (response.Unauthorized)
-            {
-                return Results.Unauthorized();
-            }
-
-            if (response.Forbidden)
-            {
-                return Results.StatusCode(403);
-            }
-
-            return Results.Ok(response.Team);
+            return Results.Ok(response.Resource);
         });
 
         group.MapPost("/teams", async (ITeamService teamService, TeamSubmitDTO teamSubmit) =>
@@ -60,14 +50,14 @@ public static class TeamEndpoints
                 return Results.BadRequest("Color values must be stored as 6 digit hexadecimals in format '#xxxxxx' (lettercasing indifferent).");
             }
 
-            TeamResponseDTO createResponse = await teamService.CreateTeamAsync(teamSubmit);
+            ResponseDTO<Team> response = await teamService.CreateTeamAsync(teamSubmit);
 
-            if (createResponse.Unauthorized)
+            if (response.Error || response.Resource == null)
             {
-                return Results.Unauthorized();
+                return response.ThrowError();
             }
 
-            return Results.Created($"/teams/{createResponse.Team.Id}", createResponse.Team);
+            return Results.Created($"/teams/{response.Resource.Id}", response.Resource);
         })
             .WithOpenApi()
             .Produces<Team>(StatusCodes.Status201Created);
@@ -90,37 +80,32 @@ public static class TeamEndpoints
                 return Results.BadRequest("Color values must be stored as 6 digit hexadecimals in format '#xxxxxx' (lettercasing indifferent).");
             }
 
-            TeamResponseDTO updateResponse = await teamService.UpdateTeamAsync(teamSubmit);
+            ResponseDTO<Team> updateResponse = await teamService.UpdateTeamAsync(teamSubmit);
             if (updateResponse.NotFound)
             {
-                TeamResponseDTO createResponse = await teamService.CreateTeamAsync(teamSubmit);
+                ResponseDTO<Team> createResponse = await teamService.CreateTeamAsync(teamSubmit);
 
-                if (createResponse.Unauthorized)
+                if (createResponse.Error || createResponse.Resource == null)
                 {
-                    return Results.Unauthorized();
+                    return createResponse.ThrowError();
                 }
                 
-                return Results.Created($"/teams/{createResponse.Team.Id}", createResponse.Team);
+                return Results.Created($"/teams/{createResponse.Resource.Id}", createResponse.Resource);
             }
 
-            if (updateResponse.Unauthorized)
+            if (updateResponse.Error)
             {
-                return Results.Unauthorized();
+                return updateResponse.ThrowError();
             }
 
-            if (updateResponse.Forbidden)
-            {
-                return Results.StatusCode(403);
-            }
-
-            return Results.Ok(updateResponse.Team);
+            return Results.Ok(updateResponse.Resource);
         })
             .WithOpenApi()
             .Produces<Team>(StatusCodes.Status201Created);
 
         group.MapDelete("/teams/{teamId}", async (ITeamService teamService, int teamId, string sessionKey) =>
         {
-            TeamResponseDTO response = await teamService.DeleteTeamAsync(teamId, sessionKey);
+            ResponseDTO<Team> response = await teamService.DeleteTeamAsync(teamId, sessionKey);
             if (response.Error)
             {
                 return response.ThrowError();

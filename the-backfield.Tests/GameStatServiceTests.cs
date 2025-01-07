@@ -68,9 +68,9 @@ namespace TheBackfield.Tests
             _mockPlayerRepository.Setup(repo => repo.GetSinglePlayerAsync(newGameStatSubmit.PlayerId)).ReturnsAsync(TestPlayer);
             _mockGameStatRepository.Setup(repo => repo.CreateGameStatAsync(newGameStatSubmit, TestUser.Id)).ReturnsAsync(TestGameStat);
 
-            GameStatResponseDTO actualResponse = await _gameStatService.CreateGameStatAsync(newGameStatSubmit);
+            ResponseDTO<GameStat> actualResponse = await _gameStatService.CreateGameStatAsync(newGameStatSubmit);
 
-            Assert.Equal(TestGameStat, actualResponse.GameStat);
+            Assert.Equal(TestGameStat, actualResponse.Resource);
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace TheBackfield.Tests
             _mockUserRepository.Setup(repo => repo.GetUserBySessionKeyAsync(updateGameStatSubmit.SessionKey)).ReturnsAsync(TestUser);
             _mockGameStatRepository.Setup(repo => repo.GetSingleGameStatAsync(updateGameStatSubmit.Id)).ReturnsAsync(TestGameStat);
 
-            GameStatResponseDTO actualResponse = await _gameStatService.UpdateGameStatAsync(updateGameStatSubmit);
+            ResponseDTO<GameStat> actualResponse = await _gameStatService.UpdateGameStatAsync(updateGameStatSubmit);
 
             Assert.NotNull(actualResponse.ErrorMessage);
         }
@@ -108,7 +108,7 @@ namespace TheBackfield.Tests
             _mockGameStatRepository.Setup(repo => repo.GetSingleGameStatAsync(gameStatId)).ReturnsAsync(TestGameStat);
             _mockGameStatRepository.Setup(repo => repo.DeleteGameStatAsync(gameStatId)).ReturnsAsync(deleteReturn);
 
-            GameStatResponseDTO actualResponse = await _gameStatService.DeleteGameStatAsync(gameStatId, sessionKey);
+            ResponseDTO<GameStat> actualResponse = await _gameStatService.DeleteGameStatAsync(gameStatId, sessionKey);
 
             Assert.False(actualResponse.Error);
         }

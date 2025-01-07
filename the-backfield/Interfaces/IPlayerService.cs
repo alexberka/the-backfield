@@ -1,14 +1,15 @@
 using TheBackfield.DTOs;
+using TheBackfield.Models;
 
 namespace TheBackfield.Interfaces;
 
 public interface IPlayerService
 {
-    Task<PlayerResponseDTO> GetPlayersAsync(string sessionKey);
-    Task<PlayerResponseDTO> GetSinglePlayerAsync(int playerId, string sessionKey);
-    Task<PlayerResponseDTO> CreatePlayerAsync(PlayerSubmitDTO playerSubmit);
-    Task<PlayerResponseDTO> UpdatePlayerAsync(PlayerSubmitDTO playerSubmit);
-    Task<PlayerResponseDTO> DeletePlayerAsync(int playerId, string sessionKey);
-    Task<PlayerResponseDTO> AddPlayerPositionsAsync(PlayerPositionSubmitDTO playerPositionSubmit);
-    Task<PlayerResponseDTO> RemovePlayerPositionsAsync(PlayerPositionSubmitDTO playerPositionSubmit);
+    Task<ResponseDTO<List<Player>>> GetPlayersAsync(string sessionKey);
+    Task<ResponseDTO<Player>> GetSinglePlayerAsync(int playerId, string sessionKey);
+    Task<ResponseDTO<Player>> CreatePlayerAsync(PlayerSubmitDTO playerSubmit);
+    Task<ResponseDTO<Player>> UpdatePlayerAsync(PlayerSubmitDTO playerSubmit);
+    Task<ResponseDTO<Player>> DeletePlayerAsync(int playerId, string sessionKey);
+    Task<ResponseDTO<Player>> AddPlayerPositionsAsync(PlayerPositionSubmitDTO playerPositionSubmit);
+    Task<ResponseDTO<Player>> RemovePlayerPositionsAsync(PlayerPositionSubmitDTO playerPositionSubmit);
 }

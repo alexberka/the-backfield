@@ -1,5 +1,6 @@
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
+using TheBackfield.Models;
 
 namespace TheBackfield.Services;
 
@@ -12,8 +13,8 @@ public class PositionService : IPositionService
         _positionRepository = positionRepository;
     }
 
-    public async Task<PositionResponseDTO> GetPositionsAsync()
+    public async Task<ResponseDTO<List<Position>>> GetPositionsAsync()
     {
-        return new PositionResponseDTO { Positions = await _positionRepository.GetPositionsAsync() };
+        return new ResponseDTO<List<Position>> { Resource = await _positionRepository.GetPositionsAsync() };
     }
 }

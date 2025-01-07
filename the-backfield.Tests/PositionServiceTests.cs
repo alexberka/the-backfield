@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Moq;
+﻿using Moq;
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
 using TheBackfield.Models;
@@ -34,9 +29,9 @@ namespace TheBackfield.Tests
         {
             _mockPositionRepository.Setup(repo => repo.GetPositionsAsync()).ReturnsAsync(Positions);
 
-            PositionResponseDTO actualResponse = await _positionService.GetPositionsAsync();
+            ResponseDTO<List<Position>> actualResponse = await _positionService.GetPositionsAsync();
 
-            Assert.Equal(Positions, actualResponse.Positions);
+            Assert.Equal(Positions, actualResponse.Resource);
         }
     }
 }

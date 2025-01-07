@@ -1,6 +1,6 @@
 ﻿namespace TheBackfield.DTOs
 {
-    public class ResponseDTO
+    public class ResponseDTO<T>
     {
         public bool Unauthorized { get; set; } = false;
         public bool Forbidden { get; set; } = false;
@@ -13,6 +13,7 @@
                 return Unauthorized == true || Forbidden == true || NotFound == true || ErrorMessage != null;
             }
         }
+        public T? Resource { get; set; }
         /// <summary>
         /// Throws error as IResult
         /// <br/>Converts any error data stored in DTO
@@ -34,47 +35,14 @@
             }
             return Results.BadRequest(ErrorMessage ?? "");
         }
-
-        public PlayerResponseDTO CastToPlayerResponseDTO()
-        {
-            return new PlayerResponseDTO
-            {
-                NotFound = NotFound,
-                Unauthorized = Unauthorized,
-                Forbidden = Forbidden,
-                ErrorMessage = ErrorMessage
-            };
-        }
-
-        public TeamResponseDTO CastToTeamResponseDTO()
-        {
-            return new TeamResponseDTO
-            {
-                NotFound = NotFound,
-                Unauthorized = Unauthorized,
-                Forbidden = Forbidden,
-                ErrorMessage = ErrorMessage
-            };
-        }
-
-        public GameResponseDTO CastToGameResponseDTO()
-        {
-            return new GameResponseDTO
-            {
-                NotFound = NotFound,
-                Unauthorized = Unauthorized,
-                Forbidden = Forbidden,
-                ErrorMessage = ErrorMessage
-            };
-        }
         /// <summary>
-        /// Convert instance of ResponseDTO or any class that extends ResponseDTO to instance of type T. Only base class properties are transferred.
+        /// Convert instance of ResponseDTO or any class that extends ResponseDTO to instance of type K. Only base class properties are transferred.
         /// </summary>
-        /// <typeparam name="T">Class that extends base class ResponseDTO</typeparam>
-        /// <returns></returns>
-        public T CastTo<T>() where T : ResponseDTO
+        /// <typeparam name="K">New generic type</typeparam>
+        /// <returns>ResponseDTO&lt;<typeparamref name="K"/>&gt;</returns>
+        public ResponseDTO<K> ToType<K>()
         {
-            T cast = Activator.CreateInstance<T>();
+            ResponseDTO<K> cast = Activator.CreateInstance<ResponseDTO<K>>();
 
             cast.Unauthorized = Unauthorized;
             cast.NotFound = NotFound;

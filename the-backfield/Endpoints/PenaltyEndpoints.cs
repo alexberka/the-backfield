@@ -11,13 +11,13 @@ public static class PenaltyEndpoints
 
         group.MapGet("/penalties", async (IPenaltyService penaltyService, string sessionKey) =>
         {
-            PenaltyResponseDTO response = await penaltyService.GetAllPenaltiesAsync(sessionKey);
+            ResponseDTO<List<Penalty>> response = await penaltyService.GetAllPenaltiesAsync(sessionKey);
             if (response.Error)
             {
                 return response.ThrowError();
             }
 
-            return Results.Ok(response.Penalties);
+            return Results.Ok(response.Resource);
         })
             .WithOpenApi()
             .Produces<List<Penalty>>(StatusCodes.Status200OK);
