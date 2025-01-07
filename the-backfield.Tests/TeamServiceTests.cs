@@ -41,9 +41,9 @@ namespace TheBackfield.Tests
             _mockUserRepository.Setup(repo => repo.GetUserBySessionKeyAsync(sessionKey)).ReturnsAsync(TestUser);
             _mockTeamRepository.Setup(repo => repo.GetSingleTeamAsync(teamId)).ReturnsAsync(TestTeam);
 
-            TeamResponseDTO actualResponse = await _teamService.GetSingleTeamAsync(teamId, sessionKey);
+            ResponseDTO<Team> actualResponse = await _teamService.GetSingleTeamAsync(teamId, sessionKey);
 
-            Assert.Equal(TestTeam, actualResponse.Team);
+            Assert.Equal(TestTeam, actualResponse.Resource);
         }
 
         [Fact]
@@ -64,9 +64,9 @@ namespace TheBackfield.Tests
             _mockUserRepository.Setup(repo => repo.GetUserBySessionKeyAsync(newTeamSubmit.SessionKey)).ReturnsAsync(TestUser);
             _mockTeamRepository.Setup(repo => repo.CreateTeamAsync(newTeamSubmit, TestUser.Id)).ReturnsAsync(TestTeam);
 
-            TeamResponseDTO actualResponse = await _teamService.CreateTeamAsync(newTeamSubmit);
+            ResponseDTO<Team> actualResponse = await _teamService.CreateTeamAsync(newTeamSubmit);
 
-            Assert.Equal(TestTeam, actualResponse.Team);
+            Assert.Equal(TestTeam, actualResponse.Resource);
         }
 
         [Fact]
@@ -97,9 +97,9 @@ namespace TheBackfield.Tests
             _mockTeamRepository.Setup(repo => repo.GetSingleTeamAsync(updateTeamSubmit.Id)).ReturnsAsync(TestTeam);
             _mockTeamRepository.Setup(repo => repo.UpdateTeamAsync(updateTeamSubmit)).ReturnsAsync(updatedTeam);
 
-            TeamResponseDTO actualResponse = await _teamService.UpdateTeamAsync(updateTeamSubmit);
+            ResponseDTO<Team> actualResponse = await _teamService.UpdateTeamAsync(updateTeamSubmit);
 
-            Assert.Equal(updatedTeam, actualResponse.Team);
+            Assert.Equal(updatedTeam, actualResponse.Resource);
         }
 
         [Fact]
@@ -113,7 +113,7 @@ namespace TheBackfield.Tests
             _mockTeamRepository.Setup(repo => repo.GetSingleTeamAsync(teamId)).ReturnsAsync(TestTeam);
             _mockTeamRepository.Setup(repo => repo.DeleteTeamAsync(teamId)).ReturnsAsync(deleteReturn);
 
-            TeamResponseDTO actualResponse = await _teamService.DeleteTeamAsync(teamId, sessionKey);
+            ResponseDTO<Team> actualResponse = await _teamService.DeleteTeamAsync(teamId, sessionKey);
 
             Assert.False(actualResponse.Error);
         }

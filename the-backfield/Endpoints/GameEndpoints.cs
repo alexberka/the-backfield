@@ -13,26 +13,26 @@ public static class GameEndpoints
 
         group.MapGet("/games", async (IGameService gameService, string sessionKey) =>
         {
-            GameResponseDTO response = await gameService.GetAllGamesAsync(sessionKey);
+            ResponseDTO<List<Game>> response = await gameService.GetAllGamesAsync(sessionKey);
             if (response.ErrorMessage != null)
             {
                 return response.ThrowError();
             }
 
-            return Results.Ok(response.Games);
+            return Results.Ok(response.Resource);
         })
             .WithOpenApi()
             .Produces<List<Game>>(StatusCodes.Status200OK);
 
         group.MapGet("/games/{gameId}", async (IGameService gameService, int gameId, string sessionKey) =>
         {
-            GameResponseDTO response = await gameService.GetSingleGameAsync(gameId, sessionKey);
+            ResponseDTO<Game> response = await gameService.GetSingleGameAsync(gameId, sessionKey);
             if (response.ErrorMessage != null)
             {
                 return response.ThrowError();
             }
 
-            return Results.Ok(response.Game);
+            return Results.Ok(response.Resource);
         })
             .WithOpenApi()
             .Produces<Game>(StatusCodes.Status200OK);
@@ -52,13 +52,13 @@ public static class GameEndpoints
 
         group.MapPost("/games", async (IGameService gameService, GameSubmitDTO gameSubmit) =>
         {
-            GameResponseDTO response = await gameService.CreateGameAsync(gameSubmit);
-            if (response.Error || response.Game == null)
+            ResponseDTO<Game> response = await gameService.CreateGameAsync(gameSubmit);
+            if (response.Error || response.Resource == null)
             {
                 return response.ThrowError();
             }
 
-            return Results.Created($"/games/{response.Game.Id}", response.Game);
+            return Results.Created($"/games/{response.Resource.Id}", response.Resource);
         })
             .WithOpenApi()
             .Produces<Game>(StatusCodes.Status201Created);
@@ -70,23 +70,23 @@ public static class GameEndpoints
                 return Results.BadRequest("Id in payload must be the same as the gameId in the URI");
             }
 
-            GameResponseDTO response = await gameService.UpdateGameAsync(gameSubmit);
+            ResponseDTO<Game> response = await gameService.UpdateGameAsync(gameSubmit);
             if (response.ErrorMessage == "Invalid game id")
             {
                 response = await gameService.CreateGameAsync(gameSubmit);
-                if (response.Error || response.Game == null)
+                if (response.Error || response.Resource == null)
                 {
                     return response.ThrowError();
                 }
-                return Results.Created($"/games/{response.Game.Id}", response.Game);
+                return Results.Created($"/games/{response.Resource.Id}", response.Resource);
             }
 
-            if (response.Error || response.Game == null)
+            if (response.Error || response.Resource == null)
             {
                 return response.ThrowError();
             }
 
-            return Results.Ok(response.Game);
+            return Results.Ok(response.Resource);
         })
             .WithOpenApi()
             .Produces<Game>(StatusCodes.Status200OK)
@@ -94,7 +94,7 @@ public static class GameEndpoints
 
         group.MapDelete("/games/{gameId}", async (IGameService gameService, int gameId, string sessionKey) =>
         {
-            GameResponseDTO response = await gameService.DeleteGameAsync(gameId, sessionKey);
+            ResponseDTO<Game> response = await gameService.DeleteGameAsync(gameId, sessionKey);
             if (response.Error)
             {
                 return response.ThrowError();

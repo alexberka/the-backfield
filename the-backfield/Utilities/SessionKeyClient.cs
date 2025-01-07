@@ -33,22 +33,22 @@ namespace TheBackfield.Utilities
         /// <param name="sessionKey">SessionKey parameter received from client</param>
         /// <param name="user">User object retrieved with SessionKey (may be null)</param>
         /// <param name="team"></param>
-        /// <returns>TeamResponseDTO with Team = Team if access granted, Error = IResult if access denied </returns>
-        public static TeamResponseDTO VerifyAccess(string sessionKey, User? user, Team? team)
+        /// <returns>ResponseDTO<Team> with Team = Team if access granted, Error = IResult if access denied </returns>
+        public static ResponseDTO<Team> VerifyAccess(string sessionKey, User? user, Team? team)
         {
             if (team == null)
             {
-                return new TeamResponseDTO { NotFound = true, ErrorMessage = "Invalid team id" };
+                return new ResponseDTO<Team> { NotFound = true, ErrorMessage = "Invalid team id" };
             }
             if (user == null || user.SessionKey != sessionKey)
             {
-                return new TeamResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+                return new ResponseDTO<Team> { Unauthorized = true, ErrorMessage = "Invalid session key" };
             }
             if (team.UserId != user.Id)
             {
-                return new TeamResponseDTO { Forbidden = true, ErrorMessage = "User does not have access" };
+                return new ResponseDTO<Team> { Forbidden = true, ErrorMessage = "User does not have access" };
             }
-            return new TeamResponseDTO { Team = team };
+            return new ResponseDTO<Team> { Resource = team };
         }
         /// <summary>
         /// 
@@ -57,21 +57,21 @@ namespace TheBackfield.Utilities
         /// <param name="user">User object retrieved with SessionKey (may be null)</param>
         /// <param name="player"></param>
         /// <returns></returns>
-        public static PlayerResponseDTO VerifyAccess(string sessionKey, User? user, Player? player)
+        public static ResponseDTO<Player> VerifyAccess(string sessionKey, User? user, Player? player)
         {
             if (player == null)
             {
-                return new PlayerResponseDTO { NotFound = true, ErrorMessage = "Invalid player id" };
+                return new ResponseDTO<Player> { NotFound = true, ErrorMessage = "Invalid player id" };
             }
             if (user == null || user.SessionKey != sessionKey)
             {
-                return new PlayerResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+                return new ResponseDTO<Player> { Unauthorized = true, ErrorMessage = "Invalid session key" };
             }
             if (player.UserId != user.Id)
             {
-                return new PlayerResponseDTO { Forbidden = true, ErrorMessage = "User does not have access" };
+                return new ResponseDTO<Player> { Forbidden = true, ErrorMessage = "User does not have access" };
             }
-            return new PlayerResponseDTO { Player = player };
+            return new ResponseDTO<Player> { Resource = player };
         }
         /// <summary>
         /// 
@@ -80,21 +80,21 @@ namespace TheBackfield.Utilities
         /// <param name="user">User object retrieved with SessionKey (may be null)</param>
         /// <param name="game">Game object retrieved with request (may be null)</param>
         /// <returns></returns>
-        public static GameResponseDTO VerifyAccess(string sessionKey, User? user, Game? game)
+        public static ResponseDTO<Game> VerifyAccess(string sessionKey, User? user, Game? game)
         {
             if (game == null)
             {
-                return new GameResponseDTO { NotFound = true, ErrorMessage = "Invalid game id" };
+                return new ResponseDTO<Game> { NotFound = true, ErrorMessage = "Invalid game id" };
             }
             if (user == null || user.SessionKey != sessionKey)
             {
-                return new GameResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+                return new ResponseDTO<Game> { Unauthorized = true, ErrorMessage = "Invalid session key" };
             }
             if (game.UserId != user.Id)
             {
-                return new GameResponseDTO { Forbidden = true, ErrorMessage = "User does not have access" };
+                return new ResponseDTO<Game> { Forbidden = true, ErrorMessage = "User does not have access" };
             }
-            return new GameResponseDTO { Game = game };
+            return new ResponseDTO<Game> { Resource = game };
         }
         /// <summary>
         /// 
@@ -103,38 +103,38 @@ namespace TheBackfield.Utilities
         /// <param name="user">User object retrieved with SessionKey (may be null)</param>
         /// <param name="gameStat">GameStat object retrieved with request (may be null)</param>
         /// <returns></returns>
-        public static GameStatResponseDTO VerifyAccess(string sessionKey, User? user, GameStat? gameStat)
+        public static ResponseDTO<GameStat> VerifyAccess(string sessionKey, User? user, GameStat? gameStat)
         {
             if (gameStat == null)
             {
-                return new GameStatResponseDTO { NotFound = true, ErrorMessage = "Invalid gameStat id" };
+                return new ResponseDTO<GameStat> { NotFound = true, ErrorMessage = "Invalid gameStat id" };
             }
             if (user == null || user.SessionKey != sessionKey)
             {
-                return new GameStatResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+                return new ResponseDTO<GameStat> { Unauthorized = true, ErrorMessage = "Invalid session key" };
             }
             if (gameStat.UserId != user.Id)
             {
-                return new GameStatResponseDTO { Forbidden = true, ErrorMessage = "User does not have access" };
+                return new ResponseDTO<GameStat> { Forbidden = true, ErrorMessage = "User does not have access" };
             }
-            return new GameStatResponseDTO { GameStat = gameStat };
+            return new ResponseDTO<GameStat> { Resource = gameStat };
         }
 
-        public static PlayResponseDTO VerifyAccess(string sessionKey, User? user, Play? play)
+        public static ResponseDTO<Play> VerifyAccess(string sessionKey, User? user, Play? play)
         {
             if (play == null)
             {
-                return new PlayResponseDTO { NotFound = true, ErrorMessage = "Invalid play id" };
+                return new ResponseDTO<Play> { NotFound = true, ErrorMessage = "Invalid play id" };
             }
             if (user == null || user.SessionKey != sessionKey)
             {
-                return new PlayResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+                return new ResponseDTO<Play> { Unauthorized = true, ErrorMessage = "Invalid session key" };
             }
             if (play.Game == null || play.Game.UserId != user.Id)
             {
-                return new PlayResponseDTO { Forbidden = true, ErrorMessage = "User lacks permissions to access this game" };
+                return new ResponseDTO<Play> { Forbidden = true, ErrorMessage = "User lacks permissions to access this game" };
             }
-            return new PlayResponseDTO { Play = play };
+            return new ResponseDTO<Play> { Resource = play };
         }
     }
 }

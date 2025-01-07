@@ -12,13 +12,13 @@ public static class PositionEndpoints
 
         group.MapGet("/positions", async (IPositionService positionService) =>
         {
-            PositionResponseDTO response = await positionService.GetPositionsAsync();
+            ResponseDTO<List<Position>> response = await positionService.GetPositionsAsync();
             if (response.ErrorMessage != null)
             {
                 return response.ThrowError();
             }
 
-            return Results.Ok(response.Positions);
+            return Results.Ok(response.Resource);
         })
             .WithOpenApi()
             .Produces<List<Position>>(StatusCodes.Status200OK);

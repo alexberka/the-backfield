@@ -19,66 +19,66 @@ public class PlayerService : IPlayerService
         _teamRepository = teamRepository;
     }
 
-    public async Task<PlayerResponseDTO> CreatePlayerAsync(PlayerSubmitDTO playerSubmit)
+    public async Task<ResponseDTO<Player>> CreatePlayerAsync(PlayerSubmitDTO playerSubmit)
     {
         User? user = await _userRepository.GetUserBySessionKeyAsync(playerSubmit.SessionKey);
         if (user == null)
         {
-            return new PlayerResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+            return new ResponseDTO<Player> { Unauthorized = true, ErrorMessage = "Invalid session key" };
         }
 
         Team? team = await _teamRepository.GetSingleTeamAsync(playerSubmit.TeamId);
-        ResponseDTO teamCheck = SessionKeyClient.VerifyAccess(playerSubmit.SessionKey, user, team);
+        ResponseDTO<Team> teamCheck = SessionKeyClient.VerifyAccess(playerSubmit.SessionKey, user, team);
         if (teamCheck.ErrorMessage != null)
         {
-            return teamCheck.CastToPlayerResponseDTO();
+            return teamCheck.ToType<Player>();
         }
 
         Player addedPlayer = await _playerRepository.CreatePlayerAsync(playerSubmit, user.Id);
 
-        return new PlayerResponseDTO { Player = await _playerRepository.SetPlayerPositionsAsync(addedPlayer.Id, playerSubmit.PositionIds) };
+        return new ResponseDTO<Player> { Resource = await _playerRepository.SetPlayerPositionsAsync(addedPlayer.Id, playerSubmit.PositionIds) };
     }
 
-    public async Task<PlayerResponseDTO> DeletePlayerAsync(int playerId, string sessionKey)
+    public async Task<ResponseDTO<Player>> DeletePlayerAsync(int playerId, string sessionKey)
     {
         User? user = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
         Player? player = await _playerRepository.GetSinglePlayerAsync(playerId);
-        PlayerResponseDTO playerCheck = SessionKeyClient.VerifyAccess(sessionKey, user, player);
+        ResponseDTO<Player> playerCheck = SessionKeyClient.VerifyAccess(sessionKey, user, player);
         if (playerCheck.Error)
         {
             return playerCheck;
         }
 
-        return new PlayerResponseDTO { ErrorMessage = await _playerRepository.DeletePlayerAsync(playerId) };
+        return new ResponseDTO<Player> { ErrorMessage = await _playerRepository.DeletePlayerAsync(playerId) };
     }
 
-    public async Task<PlayerResponseDTO> GetPlayersAsync(string sessionKey)
+    public async Task<ResponseDTO<List<Player>>> GetPlayersAsync(string sessionKey)
     {
         User? user = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
         if (user == null)
         {
-            return new PlayerResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+            return new ResponseDTO<List<Player>> { Unauthorized = true, ErrorMessage = "Invalid session key" };
         }
 
-        return new PlayerResponseDTO { Players = await _playerRepository.GetPlayersAsync(user.Id) };
+        return new ResponseDTO<List<Player>> { Resource = await _playerRepository.GetPlayersAsync(user.Id) };
     }
 
-    public async Task<PlayerResponseDTO> GetSinglePlayerAsync(int playerId, string sessionKey)
+    public async Task<ResponseDTO<Player>> GetSinglePlayerAsync(int playerId, string sessionKey)
     {
         User? user = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
         Player? player = await _playerRepository.GetSinglePlayerAsync(playerId);
         return SessionKeyClient.VerifyAccess(sessionKey, user, player);
     }
-    public async Task<PlayerResponseDTO> UpdatePlayerAsync(PlayerSubmitDTO playerSubmit)
+    public async Task<ResponseDTO<Player>> UpdatePlayerAsync(PlayerSubmitDTO playerSubmit)
     {
         User? user = await _userRepository.GetUserBySessionKeyAsync(playerSubmit.SessionKey);
         if (user == null)
         {
-            return new PlayerResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+            return new ResponseDTO<Player> { Unauthorized = true, ErrorMessage = "Invalid session key" };
         }
 
         Player? player = await _playerRepository.GetSinglePlayerAsync(playerSubmit.Id);
-        PlayerResponseDTO playerCheck = SessionKeyClient.VerifyAccess(playerSubmit.SessionKey, user, player);
+        ResponseDTO<Player> playerCheck = SessionKeyClient.VerifyAccess(playerSubmit.SessionKey, user, player);
         if (playerCheck.ErrorMessage != null || player == null)
         {
             return playerCheck;
@@ -87,46 +87,46 @@ public class PlayerService : IPlayerService
         if (playerSubmit.TeamId != 0)
         {
             Team? team = await _teamRepository.GetSingleTeamAsync(playerSubmit.TeamId);
-            ResponseDTO teamCheck = SessionKeyClient.VerifyAccess(playerSubmit.SessionKey, user, team);
+            ResponseDTO<Team> teamCheck = SessionKeyClient.VerifyAccess(playerSubmit.SessionKey, user, team);
             if (teamCheck.ErrorMessage != null)
             {
-                return teamCheck.CastToPlayerResponseDTO();
+                return teamCheck.ToType<Player>();
             }
         }
 
         Player? updatedPlayer = await _playerRepository.UpdatePlayerAsync(playerSubmit);
         if (updatedPlayer == null)
         {
-            return new PlayerResponseDTO { NotFound = true, ErrorMessage = "Invalid player id" };
+            return new ResponseDTO<Player> { NotFound = true, ErrorMessage = "Invalid player id" };
         }
 
-        return new PlayerResponseDTO { Player = await _playerRepository.SetPlayerPositionsAsync(updatedPlayer.Id, playerSubmit.PositionIds) };
+        return new ResponseDTO<Player> { Resource = await _playerRepository.SetPlayerPositionsAsync(updatedPlayer.Id, playerSubmit.PositionIds) };
     }
 
-    public async Task<PlayerResponseDTO> AddPlayerPositionsAsync(PlayerPositionSubmitDTO playerPositionSubmit)
+    public async Task<ResponseDTO<Player>> AddPlayerPositionsAsync(PlayerPositionSubmitDTO playerPositionSubmit)
     {
-        User? user = await _userRepository.GetUserBySessionKeyAsync(playerPositionSubmit.SessionKey);
+        User? user = await _userRepository.GetUserBySessionKeyAsync(playerPositionSubmit.SessionKey ?? "");
         Player? player = await _playerRepository.GetSinglePlayerAsync(playerPositionSubmit.PlayerId);
-        PlayerResponseDTO playerCheck = SessionKeyClient.VerifyAccess(playerPositionSubmit.SessionKey, user, player);
+        ResponseDTO<Player> playerCheck = SessionKeyClient.VerifyAccess(playerPositionSubmit.SessionKey ?? "", user, player);
         if (playerCheck.Error)
         {
             return playerCheck;
         }
 
-        return new PlayerResponseDTO { Player = await _playerRepository.AddPlayerPositionsAsync(playerPositionSubmit.PlayerId, playerPositionSubmit.PositionIds) };
+        return new ResponseDTO<Player> { Resource = await _playerRepository.AddPlayerPositionsAsync(playerPositionSubmit.PlayerId, playerPositionSubmit.PositionIds) };
     }
 
-    public async Task<PlayerResponseDTO> RemovePlayerPositionsAsync(PlayerPositionSubmitDTO playerPositionSubmit)
+    public async Task<ResponseDTO<Player>> RemovePlayerPositionsAsync(PlayerPositionSubmitDTO playerPositionSubmit)
     {
-        User? user = await _userRepository.GetUserBySessionKeyAsync(playerPositionSubmit.SessionKey);
+        User? user = await _userRepository.GetUserBySessionKeyAsync(playerPositionSubmit.SessionKey ?? "");
         Player? player = await _playerRepository.GetSinglePlayerAsync(playerPositionSubmit.PlayerId);
-        PlayerResponseDTO playerCheck = SessionKeyClient.VerifyAccess(playerPositionSubmit.SessionKey, user, player);
+        ResponseDTO<Player> playerCheck = SessionKeyClient.VerifyAccess(playerPositionSubmit.SessionKey ?? "", user, player);
         if (playerCheck.Error)
         {
             return playerCheck;
         }
 
-        return new PlayerResponseDTO { Player = await _playerRepository.RemovePlayerPositionsAsync(playerPositionSubmit.PlayerId, playerPositionSubmit.PositionIds) };
+        return new ResponseDTO<Player> { Resource = await _playerRepository.RemovePlayerPositionsAsync(playerPositionSubmit.PlayerId, playerPositionSubmit.PositionIds) };
     }
 
 }

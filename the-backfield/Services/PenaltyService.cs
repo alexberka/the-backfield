@@ -16,33 +16,33 @@ namespace TheBackfield.Services
             _userRepository = userRepository;
         }
 
-        public Task<PenaltyResponseDTO> CreatePenaltyAsync(PenaltySubmitDTO penaltySubmit)
+        public Task<ResponseDTO<Penalty>> CreatePenaltyAsync(PenaltySubmitDTO penaltySubmit)
         {
             throw new NotImplementedException();
         }
 
-        public Task<PenaltyResponseDTO> DeletePenaltyAsync(int penaltyId, string sessionKey)
+        public Task<ResponseDTO<Penalty>> DeletePenaltyAsync(int penaltyId, string sessionKey)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<PenaltyResponseDTO> GetAllPenaltiesAsync(string sessionKey)
+        public async Task<ResponseDTO<List<Penalty>>> GetAllPenaltiesAsync(string sessionKey)
         {
             User? user = await _userRepository.GetUserBySessionKeyAsync(sessionKey);
             if (user == null)
             {
-                return new PenaltyResponseDTO { Unauthorized = true, ErrorMessage = "Invalid session key" };
+                return new ResponseDTO<List<Penalty>> { Unauthorized = true, ErrorMessage = "Invalid session key" };
             }
 
-            return new PenaltyResponseDTO { Penalties = await _penaltyRepository.GetAllPenaltiesAsync(user.Id) };
+            return new ResponseDTO<List<Penalty>> { Resource = await _penaltyRepository.GetAllPenaltiesAsync(user.Id) };
         }
 
-        public Task<PenaltyResponseDTO> GetSinglePenaltyAsync(int penaltyId, string sessionKey)
+        public Task<ResponseDTO<Penalty>> GetSinglePenaltyAsync(int penaltyId, string sessionKey)
         {
             throw new NotImplementedException();
         }
 
-        public Task<PenaltyResponseDTO> UpdatePenaltyAsync(PenaltySubmitDTO penaltySubmit)
+        public Task<ResponseDTO<Penalty>> UpdatePenaltyAsync(PenaltySubmitDTO penaltySubmit)
         {
             throw new NotImplementedException();
         }

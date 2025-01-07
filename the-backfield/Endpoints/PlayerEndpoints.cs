@@ -12,39 +12,39 @@ public static class PlayerEndpoints
 
         group.MapGet("/players", async (IPlayerService playerService, string sessionKey) =>
         {
-            PlayerResponseDTO response = await playerService.GetPlayersAsync(sessionKey);
+            ResponseDTO<List<Player>> response = await playerService.GetPlayersAsync(sessionKey);
 
             if (response.ErrorMessage != null)
             {
                 return response.ThrowError();
             }
 
-            return Results.Ok(response.Players);
+            return Results.Ok(response.Resource);
         })
             .WithOpenApi()
             .Produces<List<Player>>(StatusCodes.Status200OK);
 
         group.MapGet("/players/{playerId}", async (IPlayerService playerService, int playerId, string sessionKey) =>
         {
-            PlayerResponseDTO response = await playerService.GetSinglePlayerAsync(playerId, sessionKey);
-            if (response.ErrorMessage != null || response.Player == null)
+            ResponseDTO<Player> response = await playerService.GetSinglePlayerAsync(playerId, sessionKey);
+            if (response.ErrorMessage != null || response.Resource == null)
             {
                 return response.ThrowError();
             }
 
-            return Results.Ok(response.Player);
+            return Results.Ok(response.Resource);
         })
             .WithOpenApi()
             .Produces<Player>(StatusCodes.Status200OK);
 
         group.MapPost("/players", async (IPlayerService playerService, PlayerSubmitDTO playerSubmit) =>
         {
-            PlayerResponseDTO response = await playerService.CreatePlayerAsync(playerSubmit);
-            if (response.ErrorMessage != null || response.Player == null)
+            ResponseDTO<Player> response = await playerService.CreatePlayerAsync(playerSubmit);
+            if (response.ErrorMessage != null || response.Resource == null)
             {
                 return response.ThrowError();
             }
-            return Results.Created($"/players/{response.Player.Id}", response.Player);
+            return Results.Created($"/players/{response.Resource.Id}", response.Resource);
         })
             .WithOpenApi()
             .Produces<Player>(StatusCodes.Status201Created);
@@ -56,24 +56,24 @@ public static class PlayerEndpoints
                 return Results.BadRequest("Id in payload does not match playerId in URI");
             }
 
-            PlayerResponseDTO response = await playerService.UpdatePlayerAsync(playerSubmit);
+            ResponseDTO<Player> response = await playerService.UpdatePlayerAsync(playerSubmit);
 
             if (response.ErrorMessage == "Invalid player id")
             {
                 response = await playerService.CreatePlayerAsync(playerSubmit);
-                if (response.ErrorMessage != null || response.Player == null)
+                if (response.ErrorMessage != null || response.Resource == null)
                 {
                     return response.ThrowError();
                 }
-                return Results.Created($"/players/{response.Player.Id}", response.Player);
+                return Results.Created($"/players/{response.Resource.Id}", response.Resource);
             }
 
-            if (response.ErrorMessage != null || response.Player == null)
+            if (response.ErrorMessage != null || response.Resource == null)
             {
                 return response.ThrowError();
             }
 
-            return Results.Ok(response.Player);
+            return Results.Ok(response.Resource);
         })
             .WithOpenApi()
             .Produces<Player>(StatusCodes.Status200OK)
@@ -86,13 +86,13 @@ public static class PlayerEndpoints
                 return Results.BadRequest("Id in payload does not match playerId in URI");
             }
 
-            PlayerResponseDTO response = await playerService.AddPlayerPositionsAsync(playerPositionSubmit);
+            ResponseDTO<Player> response = await playerService.AddPlayerPositionsAsync(playerPositionSubmit);
             if (response.Error)
             {
                 return response.ThrowError();
             }
 
-            return Results.Ok(response.Player);
+            return Results.Ok(response.Resource);
         })
             .WithOpenApi()
             .Produces<Player>(StatusCodes.Status200OK);
@@ -104,20 +104,20 @@ public static class PlayerEndpoints
                 return Results.BadRequest("Id in payload does not match playerId in URI");
             }
 
-            PlayerResponseDTO response = await playerService.RemovePlayerPositionsAsync(playerPositionSubmit);
+            ResponseDTO<Player> response = await playerService.RemovePlayerPositionsAsync(playerPositionSubmit);
             if (response.Error)
             {
                 return response.ThrowError();
             }
 
-            return Results.Ok(response.Player);
+            return Results.Ok(response.Resource);
         })
             .WithOpenApi()
             .Produces<Player>(StatusCodes.Status200OK);
 
         group.MapDelete("/players/{playerId}", async (IPlayerService playerService, int playerId, string sessionKey) =>
         {
-            PlayerResponseDTO response = await playerService.DeletePlayerAsync(playerId, sessionKey);
+            ResponseDTO<Player> response = await playerService.DeletePlayerAsync(playerId, sessionKey);
             if (response.Error)
             {
                 return response.ThrowError();

@@ -12,13 +12,13 @@ public static class GameStatEndpoints
 
         group.MapPost("/game-stats", async (IGameStatService gameStatService, GameStatSubmitDTO gameStatSubmit) =>
         {
-            GameStatResponseDTO response = await gameStatService.CreateGameStatAsync(gameStatSubmit);
-            if (response.Error || response.GameStat == null)
+            ResponseDTO<GameStat> response = await gameStatService.CreateGameStatAsync(gameStatSubmit);
+            if (response.Error || response.Resource == null)
             {
                 return response.ThrowError();
             }
 
-            return Results.Created($"/game-stats/{response.GameStat.Id}", response.GameStat);
+            return Results.Created($"/game-stats/{response.Resource.Id}", response.Resource);
         })
             .WithOpenApi()
             .Produces<GameStat>(StatusCodes.Status201Created);
@@ -30,20 +30,20 @@ public static class GameStatEndpoints
                 return Results.BadRequest("Id in payload must be the same as the gameStatId in the URI");
             }
 
-            GameStatResponseDTO response = await gameStatService.UpdateGameStatAsync(gameStatSubmit);
-            if (response.Error || response.GameStat == null)
+            ResponseDTO<GameStat> response = await gameStatService.UpdateGameStatAsync(gameStatSubmit);
+            if (response.Error || response.Resource == null)
             {
                 return response.ThrowError();
             }
 
-            return Results.Ok(response.GameStat);
+            return Results.Ok(response.Resource);
         })
             .WithOpenApi()
             .Produces<GameStat>(StatusCodes.Status200OK);
 
         group.MapDelete("/game-stats/{gameStatId}", async (IGameStatService gameStatService, int gameStatId, string sessionKey) =>
         {
-            GameStatResponseDTO response = await gameStatService.DeleteGameStatAsync(gameStatId, sessionKey);
+            ResponseDTO<GameStat> response = await gameStatService.DeleteGameStatAsync(gameStatId, sessionKey);
             if (response.Error)
             {
                 return response.ThrowError();

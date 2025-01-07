@@ -10,6 +10,7 @@ namespace TheBackfield.Tests
     {
         private readonly GameService _gameService;
         private readonly Mock<IGameRepository> _mockGameRepository;
+        private readonly Mock<IPlayRepository> _mockPlayRepository;
         private readonly Mock<IUserRepository> _mockUserRepository;
         private readonly Mock<ITeamRepository> _mockTeamRepository;
         private static User TestUser { get; } = new User { Id = 14, Username = "testman", SessionKey = "Hfue82jL_14", Uid = "testmanjenkins" };
@@ -31,9 +32,10 @@ namespace TheBackfield.Tests
         public GameServiceTests()
         {
             _mockGameRepository = new Mock<IGameRepository>();
+            _mockPlayRepository = new Mock<IPlayRepository>();
             _mockUserRepository = new Mock<IUserRepository>();
             _mockTeamRepository = new Mock<ITeamRepository>();
-            _gameService = new GameService(_mockGameRepository.Object, _mockTeamRepository.Object, _mockUserRepository.Object);
+            _gameService = new GameService(_mockGameRepository.Object, _mockPlayRepository.Object, _mockTeamRepository.Object, _mockUserRepository.Object);
         }
 
         [Fact]
@@ -45,9 +47,9 @@ namespace TheBackfield.Tests
             _mockUserRepository.Setup(repo => repo.GetUserBySessionKeyAsync(sessionKey)).ReturnsAsync(TestUser);
             _mockGameRepository.Setup(repo => repo.GetSingleGameAsync(gameId)).ReturnsAsync(TestGame);
 
-            GameResponseDTO actualResponse = await _gameService.GetSingleGameAsync(gameId, sessionKey);
+            ResponseDTO<Game> actualResponse = await _gameService.GetSingleGameAsync(gameId, sessionKey);
 
-            Assert.Equal(TestGame, actualResponse.Game);
+            Assert.Equal(TestGame, actualResponse.Resource);
         }
 
         [Fact]
@@ -70,9 +72,9 @@ namespace TheBackfield.Tests
             _mockTeamRepository.Setup(repo => repo.GetSingleTeamAsync(gameSubmit.AwayTeamId)).ReturnsAsync(TestTeam2);
             _mockGameRepository.Setup(repo => repo.CreateGameAsync(gameSubmit, TestUser.Id)).ReturnsAsync(TestGame);
 
-            GameResponseDTO actualResponse = await _gameService.CreateGameAsync(gameSubmit);
+            ResponseDTO<Game> actualResponse = await _gameService.CreateGameAsync(gameSubmit);
 
-            Assert.Equal(TestGame, actualResponse.Game);
+            Assert.Equal(TestGame, actualResponse.Resource);
         }
 
         [Fact]
@@ -107,9 +109,9 @@ namespace TheBackfield.Tests
             _mockTeamRepository.Setup(repo => repo.GetSingleTeamAsync(gameSubmit.AwayTeamId)).ReturnsAsync(TestTeam2);
             _mockGameRepository.Setup(repo => repo.UpdateGameAsync(gameSubmit)).ReturnsAsync(UpdatedGame);
 
-            GameResponseDTO actualResponse = await _gameService.UpdateGameAsync(gameSubmit);
+            ResponseDTO<Game> actualResponse = await _gameService.UpdateGameAsync(gameSubmit);
 
-            Assert.Equal(UpdatedGame, actualResponse.Game);
+            Assert.Equal(UpdatedGame, actualResponse.Resource);
         }
 
         [Fact]
@@ -123,7 +125,7 @@ namespace TheBackfield.Tests
             _mockGameRepository.Setup(repo => repo.GetSingleGameAsync(gameId)).ReturnsAsync(TestGame);
             _mockGameRepository.Setup(repo => repo.DeleteGameAsync(gameId)).ReturnsAsync(deleteReturn);
 
-            GameResponseDTO actualResponse = await _gameService.DeleteGameAsync(gameId, sessionKey);
+            ResponseDTO<Game> actualResponse = await _gameService.DeleteGameAsync(gameId, sessionKey);
 
             Assert.False(actualResponse.Error);
         }
