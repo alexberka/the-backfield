@@ -49,24 +49,33 @@ namespace TheBackfield.Utilities
             return (scores.Sum(v => v > 0 ? v : 0), scores.Sum(v => v < 0 ? -1 * v : 0));
         }
 
-        public static (int nextDown, int? nextToGain, int? thisFieldPosition, int? nextTeamId) ParseFieldPosition(Play play, int homeTeamId, int awayTeamId)
+        public static (int nextDown, int? nextToGain, int? nextFieldPosition, int? nextTeamId) ParseNextFieldPosition(Play play, int homeTeamId, int awayTeamId)
         {
-            int? fieldPosition = play.FieldPositionEnd;
+            int? fieldPositionEnd = play.FieldPositionEnd;
+
+            // Factor in penalties to calculate line of scrimmage
             List<PlayPenalty> enforcedPenalties = play.Penalties.Where(pe => pe.Enforced == true).ToList();
             if (enforcedPenalties.Count() > 0)
             {
-                fieldPosition = enforcedPenalties[0].EnforcedFrom;
+                fieldPositionEnd = enforcedPenalties[0].EnforcedFrom;
                 foreach (PlayPenalty penalty in enforcedPenalties)
                 {
                     int penaltyTeamSign = penalty.TeamId == homeTeamId ? -1 : 1;
-                    fieldPosition += penaltyTeamSign * penalty.Yardage;
-                    if (Math.Abs(fieldPosition ?? 0) > 50)
+                    fieldPositionEnd += penaltyTeamSign * penalty.Yardage;
+                    if (Math.Abs(fieldPositionEnd ?? 0) > 50)
                     {
-                        fieldPosition = penaltyTeamSign * 49;
+                        fieldPositionEnd = penaltyTeamSign * 49;
                     }
                 }
             }
+            // If no penalties and the kickoff has resulted in a touchback, move ball to receiving team's 30-yard-line
+            // The assumption is that correct field position will result from penalty enforcement otherwise
+            else if (play.Kickoff != null && play.Kickoff.Touchback)
+            {
+                fieldPositionEnd = 20 * (play.TeamId == homeTeamId ? 1 : -1);
+            }
 
+            int? nextFieldPositionStart = fieldPositionEnd;
             int teamId = play.TeamId ?? 0;
             int down = play.Down;
             int? toGain = play.ToGain;
@@ -77,33 +86,56 @@ namespace TheBackfield.Utilities
                 { awayTeamId, -1 }
             };
 
+            // If a penalty results in no play and is not a loss of down penalty
             if (enforcedPenalties.Any(ep => ep.NoPlay == true) && !enforcedPenalties.Any(ep => ep.LossOfDown == true))
             {
-                if (play.Kickoff == null && (enforcedPenalties.Any(ep => ep.AutoFirstDown == true) || (fieldPosition - toGain) * teamSigns[teamId] >= 0))
+                // If penalty is an automatic first down penalty or results in first down, then adjust down and line to gain
+                if (play.Kickoff == null && (enforcedPenalties.Any(ep => ep.AutoFirstDown == true) || (fieldPositionEnd - toGain) * teamSigns[teamId] >= 0))
                 {
                     down = 1;
-                    toGain = Math.Abs((fieldPosition + (teamSigns[teamId] * 10)) ?? 0) > 50 ? teamSigns[teamId] * 50 : fieldPosition + (teamSigns[teamId] * 10);
+                    toGain = Math.Abs((nextFieldPositionStart + (teamSigns[teamId] * 10)) ?? 0) > 50 ? teamSigns[teamId] * 50 : nextFieldPositionStart + (teamSigns[teamId] * 10);
                 }
             }
             else if (play.Safety != null || play.Touchdown != null || play.FieldGoal?.Good == true)
             {
+                // If a team scores, the next play will be a free kick
                 down = 0;
                 toGain = null;
-                if (fieldPosition == 50)
+                if (play.Safety != null)
                 {
-                    teamId = homeTeamId;
+                    // If a safety is scored, the kicking team is the team that was scored on, kicking from own 20
+                    if (fieldPositionEnd == 50)
+                    {
+                        teamId = awayTeamId;
+                    }
+                    else if (fieldPositionEnd == -50)
+                    {
+                        teamId = homeTeamId;
+                    }
+                    nextFieldPositionStart = -30 * teamSigns[teamId];
                 }
-                else if (fieldPosition == -50)
+                else
                 {
-                    teamId = awayTeamId;
+                    // Else kicking team is scoring team, kicking from own 35
+                    if (fieldPositionEnd == 50)
+                    {
+                        teamId = homeTeamId;
+                    }
+                    else if (fieldPositionEnd == -50)
+                    {
+                        teamId = awayTeamId;
+                    }
+                    nextFieldPositionStart = -15 * teamSigns[teamId];
                 }
             }
             else
             {
+                // If the play was a kickoff or punt, possession changes
                 if (play.Kickoff != null || (play.Punt != null && !play.Punt.Fake))
                 {
                     teamId = teamId == homeTeamId ? awayTeamId : homeTeamId;
                 }
+                // If play included a fumble, blocked kick, or interception, examine possession chain for new possession team
                 if (play.Fumbles.Count() > 0 || play.KickBlock != null || play.Interception != null)
                 {
                     List<Player?> gainsPossession = [];
@@ -143,6 +175,7 @@ namespace TheBackfield.Utilities
                         teamId = gainsPossession[0]?.TeamId ?? 0;
                     }
 
+                    // If no players remain with possession, check for unrecovered fumble
                     if (gainsPossession.Count == 0)
                     {
                         Fumble? notRecovered = play.Fumbles.SingleOrDefault(f => f.FumbleRecoveredById == null);
@@ -159,32 +192,35 @@ namespace TheBackfield.Utilities
                         }
                     }
                 }
+                // If the play has resulted in a possession change, reset down and line to gain
                 if (teamId != play.TeamId && teamId != 0)
                 {
                     down = 1;
-                    toGain = Math.Abs(fieldPosition + (teamSigns[teamId] * 10) ?? 0) > 50 ? teamSigns[teamId] * 50 : fieldPosition + (teamSigns[teamId] * 10);
+                    toGain = Math.Abs(nextFieldPositionStart + (teamSigns[teamId] * 10) ?? 0) > 50 ? teamSigns[teamId] * 50 : nextFieldPositionStart + (teamSigns[teamId] * 10);
                 }
+                // Otherwise evaluate for first down
                 else
                 {
-                    if ((fieldPosition - toGain) * teamSigns[teamId] > 0)
+                    if ((nextFieldPositionStart - toGain) * teamSigns[teamId] >= 0)
                     {
                         down = 1;
-                        toGain = Math.Abs(fieldPosition + (teamSigns[teamId] * 10) ?? 0) > 50 ? teamSigns[teamId] * 50 : fieldPosition + (teamSigns[teamId] * 10);
+                        toGain = Math.Abs(nextFieldPositionStart + (teamSigns[teamId] * 10) ?? 0) > 50 ? teamSigns[teamId] * 50 : nextFieldPositionStart + (teamSigns[teamId] * 10);
                     }
                     else if (play.Down < 4)
                     {
                         down = play.Down + 1;
                     }
+                    // If the line to gain was not met on a 4th down, ball is turned over
                     else
                     {
                         teamId = teamId == homeTeamId ? awayTeamId : homeTeamId;
                         down = 1;
-                        toGain = Math.Abs(fieldPosition + (teamSigns[teamId] * 10) ?? 0) > 50 ? teamSigns[teamId] * 50 : fieldPosition + (teamSigns[teamId] * 10);
+                        toGain = Math.Abs(nextFieldPositionStart + (teamSigns[teamId] * 10) ?? 0) > 50 ? teamSigns[teamId] * 50 : nextFieldPositionStart + (teamSigns[teamId] * 10);
                     }
                 }
             }
             
-            return (down, toGain, fieldPosition, teamId);
+            return (down, toGain, nextFieldPositionStart, teamId);
         }
 
         public static string FieldPositionText(int? fieldPosition, string homeTeam, string awayTeam)
