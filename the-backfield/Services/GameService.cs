@@ -97,7 +97,7 @@ public class GameService : IGameService
 
         int down = 0;
         int? toGain = null;
-        int? fieldPositionEnd = null;
+        int? fieldPositionStart = null;
         int? nextTeamId = null;
 
         int currentPlayId = game.Plays.SingleOrDefault(p => !game.Plays.Any(gp => gp.PrevPlayId == p.Id))?.Id ?? 0;
@@ -106,7 +106,7 @@ public class GameService : IGameService
 
         if (currentPlay != null)
         {
-            (down, toGain, fieldPositionEnd, nextTeamId) = StatClient.ParseFieldPosition(currentPlay, game.HomeTeamId, game.AwayTeamId);
+            (down, toGain, fieldPositionStart, nextTeamId) = StatClient.ParseNextFieldPosition(currentPlay, game.HomeTeamId, game.AwayTeamId);
         }
 
         int? clockStart = null;
@@ -151,28 +151,14 @@ public class GameService : IGameService
             clockStart = game.PeriodLength;
         }
 
-        int? nextFieldPositionStart = null;
-        int? nextToGain = null;
-        // Following a score, next play starts on 35-yard line
-        if (currentPlay?.Touchdown != null || currentPlay?.Safety != null || currentPlay?.FieldGoal?.Good == true)
-        {
-            nextFieldPositionStart = nextTeamId == game.HomeTeam?.Id ? -15 : 15;
-        }
-        // Following touchback on kickoff, next play starts on 30-yard line
-        if (currentPlay?.Kickoff != null && currentPlay.Kickoff.Touchback == true)
-        {
-            nextFieldPositionStart = nextTeamId == game.HomeTeam?.Id ? -20 : 20;
-            nextToGain = nextTeamId == game.HomeTeam?.Id ? -10 : 10;
-        }
-
         PlaySubmitDTO nextPlay = new()
         {
             PrevPlayId = currentPlay?.Id ?? -1,
             GameId = game.Id,
             TeamId = nextTeamId ?? 0,
-            FieldPositionStart = nextFieldPositionStart ?? fieldPositionEnd,
+            FieldPositionStart = fieldPositionStart,
             Down = down,
-            ToGain = nextToGain ?? toGain,
+            ToGain = toGain,
             ClockStart = clockStart,
             GamePeriod = gamePeriod
         };
@@ -205,9 +191,10 @@ public class GameService : IGameService
             }
         }
 
-        // Remove kickoffs, empty plays, or plays that were nullified by penalties
+        // Remove kickoffs, turnovers, empty plays, or plays that were nullified by penalties
         List<Play> countedPlays = drive
             .Where((p) => p.Kickoff == null
+                && p.TeamId == nextPlay.TeamId
                 && p.PrevPlayId != null
                 && !p.Penalties.Any((pp) => pp.Enforced == true && pp.NoPlay == true))
             .ToList();
