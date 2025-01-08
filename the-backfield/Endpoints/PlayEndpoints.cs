@@ -49,5 +49,16 @@ public static class PlayEndpoints
         })
             .WithOpenApi()
             .Produces(StatusCodes.Status204NoContent);
+
+        // For PlaySegment testing
+        // v---------------------v
+        //group.MapGet("/play-segments/{playId}", async (IPlayService playService, int playId) =>
+        //{
+        //    List<PlaySegmentDTO> response = await playService.GetPlaySegmentsAsync(playId);
+
+        //    return Results.Ok(response);
+        //})
+        //    .WithOpenApi()
+        //    .Produces<Play>(StatusCodes.Status200OK);
     }
 }

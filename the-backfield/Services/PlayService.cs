@@ -842,6 +842,8 @@ namespace TheBackfield.Services
                 return [];
             }
 
+            List<List<PossessionChangeDTO>> possessionChains = StatClient.GetPossessionChain(play);
+
             int homeId = play.Game.HomeTeamId;
             int awayId = play.Game.AwayTeamId;
 
