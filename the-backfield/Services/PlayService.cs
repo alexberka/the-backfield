@@ -1376,7 +1376,15 @@ namespace TheBackfield.Services
                 }
             }
 
-            foreach (PlayPenalty penalty in play.Penalties)
+            // Account for safeties
+            if (play.Safety != null)
+            {
+                PlaySegmentDTO segment = segments[^1];
+                segment.SegmentText += $" Safety {teamsInv[segment.TeamId]}";
+            }
+
+            // Account for penalties
+            foreach (PlayPenalty penalty in play.Penalties.OrderBy((p) => p.Enforced))
             {
                 PlaySegmentDTO segment = new()
                 {
