@@ -912,12 +912,164 @@ namespace TheBackfield.Services
                             FieldEnd = chain[i + 1].FromPlayerAt,
                             TeamId = play.TeamId == homeId ? awayId : homeId,
                         };
-                        int returnYardage = (play.FieldPositionEnd - play.Kickoff.FieldedAt ?? 0) * teamSigns[returnSegment.TeamId];
+                        int returnYardage = (returnSegment.FieldEnd - returnSegment.FieldStart ?? 0) * teamSigns[returnSegment.TeamId];
                         returnSegment.SegmentText = $"{(play.Kickoff?.Returner != null ? $"{play.Kickoff.Returner.Name()}" : teamsInv[play.TeamId ?? 0])} " +
                             $"return for {returnYardage} yard{(Math.Abs(returnYardage) == 1 ? "" : "s")} to {StatClient.FieldPositionText(returnSegment.FieldEnd, teams[homeId], teams[awayId])}.";
                         segments.Add(returnSegment);
                         i++;
                     }
+                }
+
+                if (chain[i].EntityType == typeof(Punt) && (i > 0 || chain[i + 1].EntityType == typeof(KickBlock)))
+                {
+                    PlaySegmentDTO segment = new()
+                    {
+                        Index = segments.Count() + 1,
+                        FieldStart = chain[i].FromPlayerAt,
+                        FieldEnd = chain[i].ToPlayerAt,
+                        TeamId = play.TeamId ?? 0,
+                    };
+                    string kicker = teams[segment.TeamId];
+                    if (play.Punt?.Kicker != null)
+                    {
+                        kicker = $"{play.Punt.Kicker.Name()}";
+                    }
+                    segment.SegmentText += $"{kicker} punt";
+                    if (i + 1 < chain.Count() && chain[i + 1].EntityType == typeof(KickBlock))
+                    {
+                        segment.SegmentText += " blocked";
+                        if (play.KickBlock.BlockedBy != null)
+                        {
+                            segment.SegmentText += $" by {play.KickBlock.BlockedBy.Name()}";
+                        }
+                        segment.SegmentText += ".";
+
+                        segments.Add(segment);
+                        continue;
+                    }
+                    else
+                    {
+                        segment.SegmentText += $" to {StatClient.FieldPositionText(segment.FieldEnd, teams[homeId], teams[awayId])}";
+
+                        int yardage = (segment.FieldEnd - segment.FieldStart ?? 0) * teamSigns[segment.TeamId];
+                        segment.SegmentText += $" for {yardage} yard{(Math.Abs(yardage) == 1 ? "" : "s")}.";
+
+                        if (chain[i].ToPlayerId != 0)
+                        {
+                            segment.SegmentText += $" Fielded by {play.Punt?.Returner?.Name()}.";
+                        }
+                        if (play.Punt.FairCatch)
+                        {
+                            segment.SegmentText += " Fair catch.";
+                        }
+                        if (play.Punt.Touchback)
+                        {
+                            segment.SegmentText += " Touchback.";
+                        }
+                    }
+
+                    segments.Add(segment);
+
+                    if (play.Punt.FairCatch || play.Punt.Touchback)
+                    {
+                        i = chain.Count();
+                        continue;
+                    }
+
+                    if (i + 1 < chain.Count())
+                    {
+                        PlaySegmentDTO returnSegment = new()
+                        {
+                            Index = segments.Count() + 1,
+                            FieldStart = chain[i].ToPlayerAt,
+                            FieldEnd = chain[i + 1].FromPlayerAt,
+                            TeamId = play.TeamId == homeId ? awayId : homeId,
+                        };
+                        int returnYardage = (returnSegment.FieldEnd - returnSegment.FieldStart ?? 0) * teamSigns[returnSegment.TeamId];
+                        returnSegment.SegmentText = $"{(play.Punt?.Returner != null ? $"{play.Punt.Returner.Name()}" : teamsInv[play.TeamId ?? 0])} " +
+                            $"return for {returnYardage} yard{(Math.Abs(returnYardage) == 1 ? "" : "s")} to {StatClient.FieldPositionText(returnSegment.FieldEnd, teams[homeId], teams[awayId])}.";
+                        segments.Add(returnSegment);
+                        i++;
+                    }
+                }
+
+                if (chain[i].EntityType == typeof(FieldGoal) && (i > 0 || chain[i + 1].EntityType == typeof(KickBlock)))
+                {
+                    PlaySegmentDTO segment = new()
+                    {
+                        Index = segments.Count() + 1,
+                        FieldStart = chain[i].FromPlayerAt,
+                        FieldEnd = chain[i].ToPlayerAt,
+                        TeamId = play.TeamId ?? 0,
+                    };
+                    string kicker = teams[segment.TeamId];
+                    if (play.FieldGoal?.Kicker != null)
+                    {
+                        kicker = $"{play.FieldGoal.Kicker.Name()}";
+                    }
+                    segment.SegmentText += $"{kicker}";
+                    if (segment.FieldStart != null || segment.FieldEnd != null)
+                    {
+                        int distance = 60 - ((segment.FieldStart ?? (segment.FieldEnd ?? 0)) * teamSigns[segment.TeamId]) + 8;
+                        segment.SegmentText += $" {distance} yard";
+                    }
+                    segment.SegmentText += $" field goal attempt";
+                    if (play.FieldGoal.Good)
+                    {
+                        segment.SegmentText += " good.";
+                    }
+                    else if (!play.FieldGoal.Good && play.KickBlock == null)
+                    {
+                        segment.SegmentText += " missed.";
+                    }
+                    else if (i + 1 < chain.Count() && chain[i + 1].EntityType == typeof(KickBlock))
+                    {
+                        segment.SegmentText += " blocked";
+                        if (play.KickBlock.BlockedBy != null)
+                        {
+                            segment.SegmentText += $" by {play.KickBlock.BlockedBy.Name()}";
+                        }
+                        segment.SegmentText += ".";
+
+                        segments.Add(segment);
+                        continue;
+                    }
+                    segments.Add(segment);
+                }
+
+                if (chain[i].EntityType == typeof(KickBlock) && chain[i].ToPlayerId != 0)
+                {
+                    PlaySegmentDTO segment = new()
+                    {
+                        Index = segments.Count() + 1,
+                        FieldStart = chain[i].ToPlayerAt,
+                        FieldEnd = i + 1 < chain.Count() ? chain[i + 1].FromPlayerAt : null,
+                        TeamId = play.KickBlock?.RecoveredBy?.TeamId ?? 0
+                    };
+                    segment.SegmentText = $"Recovered by {play.KickBlock?.RecoveredBy?.Name() ?? teamsInv[segment.TeamId]}";
+
+                    if (segment.FieldStart != null)
+                    {
+                        segment.SegmentText += $" at {StatClient.FieldPositionText(segment.FieldStart, teams[homeId], teams[awayId])}";
+                    }
+                    segment.SegmentText += ".";
+
+                    if (segment.FieldEnd != null)
+                    {
+                        if (segment.TeamId == play.TeamId)
+                        {
+                            segment.SegmentText += " Advanced ";
+                        }
+                        else
+                        {
+                            segment.SegmentText += " Returned ";
+                        }
+
+                        int returnYardage = (segment.FieldEnd - segment.FieldStart ?? 0) * teamSigns[segment.TeamId];
+                        segment.SegmentText += $"{returnYardage} yard{(Math.Abs(returnYardage) == 1 ? "" : "s")} to {StatClient.FieldPositionText(segment.FieldEnd, teams[homeId], teams[awayId])}.";
+                    }
+
+                    segments.Add(segment);
                 }
 
                 if (chain[i].EntityType == typeof(Rush) && i < chain.Count() - 1)
@@ -955,199 +1107,6 @@ namespace TheBackfield.Services
                     segment.SegmentText += ".";
                     segments.Add(segment);
                 }
-            }
-
-            //Account for kickoffs
-            if (chain[0].EntityType == typeof(Kickoff))
-            {
-                
-            }
-
-            //Account for punts
-            if (play.Punt != null && !play.Punt.Fake)
-            {
-                PlaySegmentDTO segment = new()
-                {
-                    Index = 1,
-                    FieldStart = play.FieldPositionStart,
-                    FieldEnd = play.Punt.FieldedAt ?? (play.Punt.Touchback ? teamSigns[play.TeamId ?? 0] * 50 : play.FieldPositionEnd),
-                    TeamId = play.TeamId ?? 0,
-                };
-                string kicker = teams[segment.TeamId];
-                if (play.Punt.Kicker != null)
-                {
-                    kicker = $"{play.Punt.Kicker.Name()}";
-                }
-                segment.SegmentText += $"{kicker} punt";
-                bool wasReturned = false;
-                if (play.KickBlock != null)
-                {
-                    segment.SegmentText += " is blocked";
-                    string blocker = "";
-                    if (play.KickBlock.BlockedBy != null)
-                    {
-                        blocker = $"{play.KickBlock.BlockedBy.Name()}";
-                        segment.SegmentText += $" by {blocker}";
-                    }
-                    segment.SegmentText += ".";
-                    if (play.KickBlock.RecoveredBy != null || play.KickBlock.RecoveredAt != null)
-                    {
-                        segment.SegmentText += " Recovered";
-                        if (play.KickBlock.RecoveredBy != null)
-                        {
-                            string recovery = $"{play.KickBlock.RecoveredBy.Name()}";
-                            segment.SegmentText += $" by {recovery}";
-                            if (play.KickBlock.RecoveredBy.TeamId != segment.TeamId)
-                            {
-                                wasReturned = true;
-                            }
-                        }
-                        if (play.KickBlock.RecoveredAt != null)
-                        {
-                            segment.SegmentText += $" at {StatClient.FieldPositionText(play.KickBlock.RecoveredAt, teams[homeId], teams[awayId])}";
-                            segment.FieldEnd = play.KickBlock.RecoveredAt;
-                        }
-                        segment.SegmentText += ".";
-                        if (!wasReturned && play.KickBlock.RecoveredAt != null && play.KickBlock.RecoveredAt != segment.FieldEnd)
-                        {
-
-                            segment.SegmentText += $" Down at {StatClient.FieldPositionText(segment.FieldEnd, teams[homeId], teams[awayId])}.";
-                        }
-                    }
-                }
-                else
-                {
-                    if (play.Punt.FieldedAt != null || play.Punt.Touchback)
-                    {
-                        if (segment.FieldStart != null)
-                        {
-                            int yardage = (segment.FieldEnd - segment.FieldStart ?? 0) * teamSigns[segment.TeamId];
-                            segment.SegmentText += $" for {yardage} yard{(Math.Abs(yardage) == 1 ? "" : "s")}";
-                        }
-                        segment.SegmentText += $" to the {StatClient.FieldPositionText(segment.FieldEnd, teams[homeId], teams[awayId])}";
-                    }
-                    segment.SegmentText += ".";
-                    if (play.Punt.Returner != null)
-                    {
-                        string returner = $"{play.Punt.Returner.Name()}";
-                        segment.SegmentText += $" Fielded by {returner}.";
-                    }
-                    if (play.Punt.FairCatch)
-                    {
-                        segment.SegmentText += " Fair catch.";
-                    }
-                    if (play.Punt.Touchback)
-                    {
-                        segment.SegmentText += " Touchback.";
-                    }
-                }
-                segments.Add(segment);
-
-                if (segment.FieldEnd != play.FieldPositionEnd && !play.Punt.Touchback && !play.Punt.FairCatch && play.KickBlock == null || wasReturned)
-                {
-                    PlaySegmentDTO returnSegment = new()
-                    {
-                        Index = segments.Count() + 1,
-                        FieldStart = wasReturned ? play.KickBlock.RecoveredAt : play.Punt.FieldedAt,
-                        FieldEnd = play.FieldPositionEnd,
-                        TeamId = play.TeamId == homeId ? awayId : homeId,
-                    };
-                    string returner = teams[returnSegment.TeamId];
-                    if (play.KickBlock?.RecoveredBy != null)
-                    {
-                        returner = $"{play.KickBlock.RecoveredBy.Name()}";
-                    }
-                    else if (play.Punt.Returner != null)
-                    {
-                        returner = $"{play.Punt.Returner.Name()}";
-                    }
-                    int returnYardage = (returnSegment.FieldEnd - returnSegment.FieldStart ?? 0) * teamSigns[returnSegment.TeamId];
-                    returnSegment.SegmentText = $"{returner} returned {returnYardage} yard{(Math.Abs(returnYardage) == 1 ? "" : "s")} to {StatClient.FieldPositionText(returnSegment.FieldEnd, teams[homeId], teams[awayId])}.";
-                    segments.Add(returnSegment);
-                }
-            }
-
-            //Account for field goals
-            if (play.FieldGoal != null && !play.FieldGoal.Fake)
-            {
-                PlaySegmentDTO segment = new()
-                {
-                    Index = 1,
-                    FieldStart = play.FieldPositionStart,
-                    FieldEnd = play.FieldPositionEnd,
-                    TeamId = play.TeamId ?? 0,
-                };
-                string kicker = teams[segment.TeamId];
-                if (play.FieldGoal.Kicker != null)
-                {
-                    kicker = $"{play.FieldGoal.Kicker.Name()}";
-                }
-                segment.SegmentText = $"{kicker}";
-                if (segment.FieldStart != null)
-                {
-                    int distance = 60 - ((segment.FieldStart ?? 0) * teamSigns[segment.TeamId]) + 8;
-                    segment.SegmentText += $" {distance} yard";
-                }
-                segment.SegmentText += $" field goal attempt is";
-                if (play.FieldGoal.Good)
-                {
-                    segment.SegmentText += " good.";
-                    segment.FieldEnd = 50 * teamSigns[segment.TeamId];
-                }
-                else if (!play.FieldGoal.Good && play.KickBlock == null)
-                {
-                    segment.SegmentText += " good.";
-                    segment.FieldEnd = segment.FieldStart - (8 * teamSigns[segment.TeamId]);
-                }
-                else if (play.KickBlock != null)
-                {
-                    segment.SegmentText += " blocked";
-                    string blocker = "";
-                    bool wasReturned = false;
-                    if (play.KickBlock.BlockedBy != null)
-                    {
-                        blocker = $"{play.KickBlock.BlockedBy.Name()}";
-                        segment.SegmentText += $" by {blocker}";
-                    }
-                    segment.SegmentText += ".";
-                    if (play.KickBlock.RecoveredBy != null || play.KickBlock.RecoveredAt != null)
-                    {
-                        segment.SegmentText += " Recovered";
-                        if (play.KickBlock.RecoveredBy != null)
-                        {
-                            string recovery = $"{play.KickBlock.RecoveredBy.Name()}";
-                            segment.SegmentText += $" by {recovery}";
-                            if (play.KickBlock.RecoveredBy.TeamId != segment.TeamId)
-                            {
-                                wasReturned = true;
-                            }
-                        }
-                        if (play.KickBlock.RecoveredAt != null)
-                        {
-                            segment.SegmentText += $" at {StatClient.FieldPositionText(play.KickBlock.RecoveredAt, teams[homeId], teams[awayId])}";
-                        }
-                        segment.SegmentText += ".";
-                        if (!wasReturned && play.KickBlock.RecoveredAt != null && play.KickBlock.RecoveredAt != segment.FieldEnd)
-                        {
-
-                            segment.SegmentText += $" Down at {StatClient.FieldPositionText(segment.FieldEnd, teams[homeId], teams[awayId])}.";
-                        }
-                    }
-                    if (wasReturned)
-                    {
-                        PlaySegmentDTO returnSegment = new()
-                        {
-                            Index = segments.Count() + 2,
-                            FieldStart = play.KickBlock.RecoveredAt,
-                            FieldEnd = play.FieldPositionEnd,
-                            TeamId = play.TeamId == homeId ? awayId : homeId,
-                        };
-                        int returnYardage = (play.FieldPositionEnd - play.KickBlock.RecoveredAt ?? 0) * teamSigns[returnSegment.TeamId];
-                        returnSegment.SegmentText = $"Returned {returnYardage} yard{(Math.Abs(returnYardage) == 1 ? "" : "s")} to {StatClient.FieldPositionText(returnSegment.FieldEnd, teams[homeId], teams[awayId])}";
-                        segments.Add(returnSegment);
-                    }
-                }
-                segments.Add(segment);
             }
 
             //Account for pass plays (+ interceptions, pass defenses, & sacks)
