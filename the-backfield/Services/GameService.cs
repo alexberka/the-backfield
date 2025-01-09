@@ -171,7 +171,7 @@ public class GameService : IGameService
         // The drive always has at least one play in it (that play may be an empty play if at start of game or currentPlay is otherwise null)
         List<Play> drive = [currentPlay ?? new()];
 
-        bool driveFound = false;
+        bool driveFound = currentPlay?.TeamId != nextTeamId;
 
         // Collect all plays from current drive, including kickoff to start drive (does not count as a play)
         while (drive[0].Kickoff == null && drive[0].PrevPlayId > 0 && !driveFound)

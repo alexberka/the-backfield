@@ -1218,6 +1218,92 @@ namespace TheBackfield.Services
                     segment.SegmentText += ".";
                     segments.Add(segment);
                 }
+
+                if (chain[i].EntityType == typeof(Lateral))
+                {
+                    Lateral? lateral = play.Laterals.SingleOrDefault((l) => l.Id == chain[i].EntityId);
+                    if (lateral == null)
+                    {
+                        continue;
+                    }
+
+                    PlaySegmentDTO segment = new()
+                    {
+                        Index = segments.Count() + 1,
+                        FieldStart = chain[i].ToPlayerAt,
+                        FieldEnd = chain[i + 1].FromPlayerAt,
+                        TeamId = lateral.NewCarrier.TeamId,
+                    };
+                    segment.SegmentText = $"{lateral.PrevCarrier.Name()} lateral to {lateral.NewCarrier.Name()} at "
+                        + $"{StatClient.FieldPositionText(segment.FieldStart, teams[homeId], teams[awayId])}.";
+                    if (segment.FieldEnd != null)
+                    {
+                        segment.SegmentText += $" Carried to {StatClient.FieldPositionText(segment.FieldEnd, teams[homeId], teams[awayId])}";
+                        if (segment.FieldStart != null)
+                        {
+                            int yardage = (segment.FieldEnd - segment.FieldStart ?? 0) * teamSigns[segment.TeamId];
+                            segment.SegmentText += $" for {yardage} yard{(Math.Abs(yardage) == 1 ? "" : "s")}";
+                        }
+                    }
+                    segment.SegmentText += ".";
+                    segments.Add(segment);
+                }
+
+                if (chain[i].EntityType == typeof(Fumble))
+                {
+                    Fumble? fumble = play.Fumbles.SingleOrDefault((f) => f.Id == chain[i].EntityId);
+                    if (fumble == null)
+                    {
+                        continue;
+                    }
+
+                    PlaySegmentDTO segment = new()
+                    {
+                        Index = segments.Count() + 1,
+                        FieldStart = chain[i].ToPlayerAt,
+                        FieldEnd = chain[i + 1].FromPlayerAt,
+                        TeamId = fumble.FumbleRecoveredBy?.TeamId ?? segments[^1].TeamId,
+                    };
+
+                    string addition = $" {fumble.FumbleCommittedBy.Name()} fumble";
+                    if (fumble.FumbleForcedBy != null)
+                    {
+                        addition += $", forced by {fumble.FumbleForcedBy.Name()}";
+                    }
+                    addition += ".";
+                    if (fumble.FumbleRecoveredBy == null)
+                    {
+                        addition += $" Ball out of bounds at {StatClient.FieldPositionText(segment.FieldEnd, teams[homeId], teams[awayId])}.";
+                    }
+                    segments[^1].SegmentText += addition;
+
+                    if (fumble.FumbleRecoveredBy != null)
+                    {
+                        segment.SegmentText = $"Fumble recovered by {fumble.FumbleRecoveredBy.Name()} at "
+                            + $"{StatClient.FieldPositionText(segment.FieldStart, teams[homeId], teams[awayId])}.";
+
+                        if (segment.TeamId == segments[^1].TeamId)
+                        {
+                            segment.SegmentText += " Advanced";
+                        }
+                        else
+                        {
+                            segment.SegmentText += " Returned";
+                        }
+                        if (segment.FieldEnd != null)
+                        {
+                            segment.SegmentText += $" to {StatClient.FieldPositionText(segment.FieldEnd, teams[homeId], teams[awayId])}";
+                            if (segment.FieldStart != null)
+                            {
+                                int yardage = (segment.FieldEnd - segment.FieldStart ?? 0) * teamSigns[segment.TeamId];
+                                segment.SegmentText += $" for {yardage} yard{(Math.Abs(yardage) == 1 ? "" : "s")}";
+                            }
+                        }
+                        segment.SegmentText += ".";
+
+                        segments.Add(segment);
+                    }
+                }
             }
                 
 
