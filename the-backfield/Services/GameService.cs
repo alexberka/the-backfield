@@ -13,18 +13,21 @@ public class GameService : IGameService
     private readonly IPlayRepository _playRepository;
     private readonly ITeamRepository _teamRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IPlayService _playService;
 
     public GameService(
         IGameRepository gameRepository,
         IPlayRepository playRepository,
         ITeamRepository teamRepository,
-        IUserRepository userRepository
+        IUserRepository userRepository,
+        IPlayService playService
         )
     {
         _gameRepository = gameRepository;
         _playRepository = playRepository;
         _teamRepository = teamRepository;
         _userRepository = userRepository;
+        _playService = playService;
     }
 
     public async Task<ResponseDTO<Game>> CreateGameAsync(GameSubmitDTO gameSubmit)
@@ -99,6 +102,7 @@ public class GameService : IGameService
         int? toGain = null;
         int? fieldPositionStart = null;
         int? nextTeamId = null;
+        PlayAsSegmentsDTO? lastPlay = null;
 
         int currentPlayId = game.Plays.SingleOrDefault(p => !game.Plays.Any(gp => gp.PrevPlayId == p.Id))?.Id ?? 0;
         Play? currentPlay = await _playRepository.GetSinglePlayAsync(currentPlayId);
@@ -107,6 +111,7 @@ public class GameService : IGameService
         if (currentPlay != null)
         {
             (down, toGain, fieldPositionStart, nextTeamId) = StatClient.ParseNextFieldPosition(currentPlay, game.HomeTeamId, game.AwayTeamId);
+            lastPlay = new PlayAsSegmentsDTO(currentPlay, await _playService.GetPlaySegmentsAsync(currentPlayId));
         }
 
         int? clockStart = null;
@@ -167,6 +172,7 @@ public class GameService : IGameService
 
         gameStream.HomeTeamScore = homeTeamScore;
         gameStream.AwayTeamScore = awayTeamScore;
+        gameStream.LastPlay = lastPlay;
 
         // The drive always has at least one play in it (that play may be an empty play if at start of game or currentPlay is otherwise null)
         List<Play> drive = [currentPlay ?? new()];
@@ -200,7 +206,7 @@ public class GameService : IGameService
             .ToList();
 
         gameStream.DrivePlays = countedPlays.Count;
-        gameStream.DrivePositionStart = null;
+        gameStream.DrivePositionStart = nextPlay.FieldPositionStart;
         gameStream.DriveYards = 0;
         gameStream.DriveTime = 0;
 
