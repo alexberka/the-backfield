@@ -1226,10 +1226,10 @@ namespace TheBackfield.Services
                     if (segment.FieldStart != null)
                     {
                         int yardage = (segment.FieldEnd - segment.FieldStart ?? 0) * teamSigns[segment.TeamId];
-                        segment.SegmentText += $" to {StatClient.FieldPositionText(segment.FieldEnd, teams[homeId], teams[awayId])} for {yardage} yard{(Math.Abs(yardage) == 1 ? "" : "s")}";
+                        segment.SegmentText += $" for {yardage} yard{(Math.Abs(yardage) == 1 ? "" : "s")}";
                     }
                 }
-                segment.SegmentText = ".";
+                segment.SegmentText += ".";
                 segments.Add(segment);
             }
 
