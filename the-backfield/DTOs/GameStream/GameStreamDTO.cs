@@ -19,6 +19,7 @@ namespace TheBackfield.DTOs.GameStream
         public int? DrivePositionStart { get; set; }
         public int DriveYards { get; set; }
         public int DriveTime { get; set; }
+        public PlayAsSegmentsDTO? LastPlay { get; set; }
         public PlaySubmitDTO NextPlay { get { return _nextPlay; } }
     }
 }
