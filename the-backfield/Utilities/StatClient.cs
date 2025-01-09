@@ -259,6 +259,11 @@ namespace TheBackfield.Utilities
 
         public static List<List<PossessionChangeDTO>> GetPossessionChain(Play play)
         {
+            // No possession chain when play does not contain a pass, rush, kickoff, field goal, or punt
+            if (play.Pass == null && play.Rush == null && play.Kickoff == null && play.FieldGoal == null && play.Punt == null)
+            {
+                return [[]];
+            }
             List<PossessionChangeDTO> possessionChanges = [];
 
             // If a play was a kick and not a fake, start with kick info
@@ -271,6 +276,7 @@ namespace TheBackfield.Utilities
                     possessionChanges.Add(new()
                     {
                         ToPlayerId = play.Kickoff.KickerId ?? 0,
+                        ToPlayerAt = play.FieldPositionStart,
                         EntityType = typeof(Kickoff),
                         EntityId = play.Kickoff.Id
                     });
@@ -278,7 +284,8 @@ namespace TheBackfield.Utilities
                     {
                         FromPlayerId = play.Kickoff.KickerId ?? 0,
                         ToPlayerId = play.Kickoff.ReturnerId ?? 0,
-                        BallReceivedAt = play.Kickoff.FieldedAt,
+                        FromPlayerAt = play.FieldPositionStart,
+                        ToPlayerAt = play.Kickoff.FieldedAt ?? play.FieldPositionEnd,
                         EntityType = typeof(Kickoff),
                         EntityId = play.Kickoff.Id
                     });
@@ -288,6 +295,7 @@ namespace TheBackfield.Utilities
                     possessionChanges.Add(new()
                     {
                         ToPlayerId = play.Punt.KickerId ?? 0,
+                        ToPlayerAt = play.FieldPositionStart,
                         EntityType = typeof(Punt),
                         EntityId = play.Punt.Id
                     });
@@ -297,7 +305,8 @@ namespace TheBackfield.Utilities
                         {
                             FromPlayerId = play.Punt.KickerId ?? 0,
                             ToPlayerId = play.Punt.ReturnerId ?? 0,
-                            BallReceivedAt = play.Punt.FieldedAt,
+                            FromPlayerAt = play.FieldPositionStart,
+                            ToPlayerAt = play.Punt.FieldedAt ?? play.FieldPositionEnd,
                             EntityType = typeof(Punt),
                             EntityId = play.Punt.Id
                         });
@@ -308,6 +317,7 @@ namespace TheBackfield.Utilities
                     possessionChanges.Add(new()
                     {
                         ToPlayerId = play.FieldGoal.KickerId ?? 0,
+                        ToPlayerAt = play.FieldPositionStart,
                         EntityType = typeof(FieldGoal),
                         EntityId = play.FieldGoal.Id
                     });
@@ -316,6 +326,8 @@ namespace TheBackfield.Utilities
                         possessionChanges.Add(new()
                         {
                             FromPlayerId = play.FieldGoal.KickerId ?? 0,
+                            FromPlayerAt = play.FieldPositionStart,
+                            ToPlayerAt = play.FieldPositionEnd,
                             EntityType = typeof(FieldGoal),
                             EntityId = play.FieldGoal.Id
                         });
@@ -328,7 +340,8 @@ namespace TheBackfield.Utilities
                     {
                         FromPlayerId = possessionChanges[0].ToPlayerId,
                         ToPlayerId = play.KickBlock.RecoveredById ?? 0,
-                        BallReceivedAt = play.KickBlock.RecoveredAt,
+                        FromPlayerAt = play.FieldPositionStart,
+                        ToPlayerAt = play.KickBlock.RecoveredAt ?? play.FieldPositionEnd,
                         EntityType = typeof(KickBlock),
                         EntityId = play.KickBlock.Id
                     });
@@ -340,6 +353,7 @@ namespace TheBackfield.Utilities
                 possessionChanges.Add(new()
                 {
                     ToPlayerId = play.Pass.PasserId ?? 0,
+                    ToPlayerAt = play.FieldPositionStart,
                     EntityType = typeof(Pass),
                     EntityId = play.Pass.Id,
                 });
@@ -349,6 +363,8 @@ namespace TheBackfield.Utilities
                     {
                         FromPlayerId = play.Pass.PasserId ?? 0,
                         ToPlayerId = play.Pass.ReceiverId ?? 0,
+                        FromPlayerAt = play.FieldPositionStart,
+                        ToPlayerAt = play.FieldPositionStart,
                         EntityType = typeof(Pass),
                         EntityId = play.Pass.Id,
                     });
@@ -359,7 +375,8 @@ namespace TheBackfield.Utilities
                     {
                         FromPlayerId = play.Pass.PasserId ?? 0,
                         ToPlayerId = play.Interception.InterceptedById ?? 0,
-                        BallReceivedAt = play.Interception.InterceptedAt,
+                        FromPlayerAt = play.FieldPositionStart,
+                        ToPlayerAt = play.Interception.InterceptedAt,
                         EntityType = typeof(Interception),
                         EntityId = play.Interception.Id,
                     });
@@ -371,144 +388,153 @@ namespace TheBackfield.Utilities
                 possessionChanges.Add(new()
                 {
                     ToPlayerId = play.Rush.RusherId ?? 0,
+                    ToPlayerAt = play.FieldPositionStart,
                     EntityType = typeof(Rush),
                     EntityId = play.Rush.Id,
                 });
             }
-
-            // If there are no fumbles or laterals, return current possessionChanges as only possible possession chain
-            if (play.Fumbles.Count() == 0 && play.Laterals.Count() == 0)
-            {
-                return [possessionChanges];
-            }
-
-            List<PossessionChangeDTO> toPlace = [];
-
-            foreach (Fumble fumble in play.Fumbles)
-            {
-                if (fumble.FumbleCommittedById != fumble.FumbleRecoveredById)
-                {
-                    possessionChanges.Add(new()
-                    {
-                        FromPlayerId = fumble.FumbleCommittedById ?? 0,
-                        ToPlayerId = fumble.FumbleRecoveredById ?? 0,
-                        BallReceivedAt = fumble.RecoveredAt,
-                        EntityType = typeof(Fumble),
-                        EntityId = fumble.Id,
-                    });
-                }
-            };
-
-            foreach (Lateral lateral in play.Laterals)
+            if (possessionChanges[possessionChanges.Count() - 1].ToPlayerId != 0)
             {
                 possessionChanges.Add(new()
                 {
-                    FromPlayerId = lateral.PrevCarrierId ?? 0,
-                    ToPlayerId = lateral.NewCarrierId ?? 0,
-                    BallReceivedAt = lateral.PossessionAt,
-                    BallCarriedTo = lateral.CarriedTo,
-                    EntityType = typeof(Lateral),
-                    EntityId = lateral.Id,
+                    FromPlayerId = possessionChanges[possessionChanges.Count() - 1].ToPlayerId,
+                    FromPlayerAt = play.FieldPositionEnd,
+                    EntityType = possessionChanges[possessionChanges.Count() - 1].EntityType,
+                    EntityId = possessionChanges[possessionChanges.Count() - 1].EntityId,
                 });
-            };
-            
-            // The variable 'paths' stores a list of possible ways to combine the fumbles and laterals in toPlace with possessionChanges
-            // Each path is a list of indices referencing one of the PossessionChangeDTOs in toPlace (indices are adjusted to start at 1 rather than 0)
-            // The indices in the path are listed in order of addition to the possible chain, with negative indices occurring before the contents of possessionChanges
-            // Ex. if toPlace contains 3 PossessionChangeDTOs, a possible path could be [3, 1, -2] which defines a path starting at the 2nd item in toPlace (toPlace[1]),
-            // continuing through the contents of possessionChanges, then toPlace[2], and finally toPlace[0]
-            List<List<int>> paths = [[]];
+            }
 
-            //checkPlacementLayer is used recursively to examine possible possession chains involving the fumbles and laterals in this play
-            bool checkPlacementLayer(int compareLength)
+            List<List<PossessionChangeDTO>> possessionChains = [[]];
+
+            // If there are fumbles or laterals, build possible possession chains
+            if (play.Fumbles.Count() != 0 || play.Laterals.Count() != 0)
             {
-                if (toPlace.Count() == 0)
+                List<PossessionChangeDTO> toPlace = [];
+
+                foreach (Fumble fumble in play.Fumbles)
                 {
-                    return true;
-                }
-
-                List<List<int>> activePaths = paths.Where((p) => p.Count() == compareLength - 1).ToList();
-
-                foreach (List<int> path in activePaths)
-                {
-                    int afterPlayerCompare = possessionChanges[possessionChanges.Count() - 1].ToPlayerId;
-                    int beforePlayerCompare = possessionChanges[0].ToPlayerId;
-                    // If this current path has any fumbles/laterals appended to the end of possessionChanges
-                    if (path.Any((index) => index > 0))
+                    if (fumble.FumbleCommittedById != fumble.FumbleRecoveredById)
                     {
-                        // Retrieve the path's positive indices
-                        List<int> afterChangeIndices = path.Where((index) => index > 0).ToList();
-                        // Use to locate the final ball carrier in the possible path
-                        afterPlayerCompare = toPlace[afterChangeIndices[afterChangeIndices.Count() - 1] - 1].ToPlayerId;
-                    }
-                    // If this current path has any fumbles/laterals at the beginning of possessionChanges
-                    if (path.Any((index) => index < 0))
-                    {
-                        // Retrieve the path's negative indices
-                        List<int> beforeChangeIndices = path.Where((index) => index < 0).ToList();
-                        // Use to locate the initial ball carrier in the possible path
-                        beforePlayerCompare = toPlace[Math.Abs(beforeChangeIndices[beforeChangeIndices.Count() - 1]) - 1].FromPlayerId;
-                    }
-
-                    // unplaced contains only PossessionChangeDTOs that have yet to be included in this path
-                    List<PossessionChangeDTO> unplaced = toPlace
-                        .Where((change) => !path.Any((index) => Math.Abs(index) - 1 == toPlace.IndexOf(change)))
-                        .ToList();
-
-                    foreach (PossessionChangeDTO change in unplaced)
-                    {
-                        // If the change could go at the end of the chain defined by this path, add it
-                        if (change.FromPlayerId == afterPlayerCompare)
+                        toPlace.Add(new()
                         {
-                            // If the path has already added another change, a diverging path must be created with this new change
-                            if (path.Count() == compareLength)
-                            {
-                                List<int> divergence = path.Take(path.Count() - 1).ToList();
-                                divergence.Add(toPlace.IndexOf(change) + 1);
-                                paths.Add(divergence);
-                            }
-                            else
-                            {
-                                path.Add(toPlace.IndexOf(change) + 1);
-                            }
-                        }
-                        // Likewise if change could go first, but with negative indices and .Insert() method
-                        if (change.ToPlayerId == beforePlayerCompare)
-                        {
-                            if (path.Count() == compareLength)
-                            {
-                                List<int> divergence = path.Skip(1).ToList();
-                                divergence.Add(-1 * (toPlace.IndexOf(change) + 1));
-                                paths.Add(divergence);
-                            }
-                            else
-                            {
-                                path.Add(-1 * (toPlace.IndexOf(change) + 1));
-                            }
-                        }
+                            FromPlayerId = fumble.FumbleCommittedById ?? 0,
+                            ToPlayerId = fumble.FumbleRecoveredById ?? 0,
+                            FromPlayerAt = fumble.FumbledAt, 
+                            ToPlayerAt = fumble.RecoveredAt,
+                            EntityType = typeof(Fumble),
+                            EntityId = fumble.Id,
+                        });
                     }
-                }
+                };
 
-                // If a valid path has been recorded that is equal to this cycle's compareLength then move to next one
-                // or exit recursion if all PossessionChangeDTOs have been placed
-                if (paths.Any((path) => path.Count() == compareLength))
+                foreach (Lateral lateral in play.Laterals)
                 {
-                    if (compareLength == toPlace.Count())
+                    toPlace.Add(new()
+                    {
+                        FromPlayerId = lateral.PrevCarrierId ?? 0,
+                        ToPlayerId = lateral.NewCarrierId ?? 0,
+                        FromPlayerAt = lateral.PossessionAt,
+                        ToPlayerAt = lateral.PossessionAt,
+                        EntityType = typeof(Lateral),
+                        EntityId = lateral.Id,
+                    });
+                };
+            
+                // The variable 'paths' stores a list of possible ways to combine the fumbles and laterals in toPlace with possessionChanges
+                // Each path is a list of indices referencing one of the PossessionChangeDTOs in toPlace (indices are adjusted to start at 1 rather than 0)
+                // The indices in the path are listed in order of addition to the possible chain, with negative indices occurring before the contents of possessionChanges
+                // Ex. if toPlace contains 3 PossessionChangeDTOs, a possible path could be [3, 1, -2] which defines a path starting at the 2nd item in toPlace (toPlace[1]),
+                // continuing through the contents of possessionChanges, then toPlace[2], and finally toPlace[0]
+                List<List<int>> paths = [[]];
+
+                //checkPlacementLayer is used recursively to examine possible possession chains involving the fumbles and laterals in this play
+                bool checkPlacementLayer(int compareLength)
+                {
+                    if (toPlace.Count() == 0)
                     {
                         return true;
                     }
-                    return checkPlacementLayer(compareLength + 1);
+
+                    List<List<int>> activePaths = paths.Where((p) => p.Count() == compareLength - 1).ToList();
+
+                    foreach (List<int> path in activePaths)
+                    {
+                        int afterPlayerCompare = possessionChanges[possessionChanges.Count() - 1].FromPlayerId;
+                        int beforePlayerCompare = possessionChanges[0].ToPlayerId;
+                        // If this current path has any fumbles/laterals appended to the end of possessionChanges
+                        if (path.Any((index) => index > 0))
+                        {
+                            // Retrieve the path's positive indices
+                            List<int> afterChangeIndices = path.Where((index) => index > 0).ToList();
+                            // Use to locate the final ball carrier in the possible path
+                            afterPlayerCompare = toPlace[afterChangeIndices[afterChangeIndices.Count() - 1] - 1].ToPlayerId;
+                        }
+                        // If this current path has any fumbles/laterals at the beginning of possessionChanges
+                        if (path.Any((index) => index < 0))
+                        {
+                            // Retrieve the path's negative indices
+                            List<int> beforeChangeIndices = path.Where((index) => index < 0).ToList();
+                            // Use to locate the initial ball carrier in the possible path
+                            beforePlayerCompare = toPlace[Math.Abs(beforeChangeIndices[beforeChangeIndices.Count() - 1]) - 1].FromPlayerId;
+                        }
+
+                        // unplaced contains only PossessionChangeDTOs that have yet to be included in this path
+                        List<PossessionChangeDTO> unplaced = toPlace
+                            .Where((change) => !path.Any((index) => Math.Abs(index) - 1 == toPlace.IndexOf(change)))
+                            .ToList();
+
+                        foreach (PossessionChangeDTO change in unplaced)
+                        {
+                            // If the change could go at the end of the chain defined by this path, add it
+                            if (change.FromPlayerId == afterPlayerCompare)
+                            {
+                                // If the path has already added another change, a diverging path must be created with this new change
+                                if (path.Count() == compareLength)
+                                {
+                                    List<int> divergence = path.Take(path.Count() - 1).ToList();
+                                    divergence.Add(toPlace.IndexOf(change) + 1);
+                                    paths.Add(divergence);
+                                }
+                                else
+                                {
+                                    path.Add(toPlace.IndexOf(change) + 1);
+                                }
+                            }
+                            // Likewise if change could go first, but with negative indices and .Insert() method
+                            if (change.ToPlayerId == beforePlayerCompare)
+                            {
+                                if (path.Count() == compareLength)
+                                {
+                                    List<int> divergence = path.Skip(1).ToList();
+                                    divergence.Add(-1 * (toPlace.IndexOf(change) + 1));
+                                    paths.Add(divergence);
+                                }
+                                else
+                                {
+                                    path.Add(-1 * (toPlace.IndexOf(change) + 1));
+                                }
+                            }
+                        }
+                    }
+
+                    // If a valid path has been recorded that is equal to this cycle's compareLength then move to next one
+                    // or exit recursion if all PossessionChangeDTOs have been placed
+                    if (paths.Any((path) => path.Count() == compareLength))
+                    {
+                        if (compareLength == toPlace.Count())
+                        {
+                            return true;
+                        }
+                        return checkPlacementLayer(compareLength + 1);
+                    }
+
+                    // Otherwise terminate recursion with invalid result
+                    return false;
                 }
 
-                // Otherwise terminate recursion with invalid result
-                return false;
-            }
+                checkPlacementLayer(1);
 
-            bool fitFound = checkPlacementLayer(1);
-
-            if (fitFound)
-            {
-                return paths
+                possessionChains = paths
                     .Where((path) => path.Count() == toPlace.Count())
                     .Select((path) =>
                     {
@@ -518,26 +544,25 @@ namespace TheBackfield.Utilities
                             PossessionChangeDTO addChange = toPlace[Math.Abs(index) - 1];
                             if (index > 0)
                             {
-                                newChain.Add(addChange);
+                                newChain[newChain.Count() - 1].FromPlayerId = addChange.ToPlayerId;
+                                newChain.Insert(newChain.Count() - 1, addChange);
                             }
                             else
                             {
-                                newChain = newChain.Skip(1).ToList();
-                                newChain.Insert(0, addChange);
-                                newChain.Insert(0, new()
-                                {
-                                    ToPlayerId = addChange.FromPlayerId,
-                                    EntityType = addChange.EntityType,
-                                    EntityId = addChange.EntityId,
-                                });
+                                newChain[0].ToPlayerId = addChange.FromPlayerId;
+                                newChain.Insert(1, addChange);
                             }
                         }
                         return newChain;
                     })
                     .ToList();
             }
+            else
+            {
+                possessionChains = [possessionChanges];
+            }
 
-            return [[]];
+            return possessionChains;
         }
     }
 }
