@@ -7,5 +7,7 @@
         public int? FieldEnd { get; set; }
         public int TeamId { get; set; }
         public string SegmentText { get; set; } = "";
+        public string LineType { get; set; } = "";
+        public string EndpointType { get; set; } = "";
     }
 }
