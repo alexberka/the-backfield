@@ -1072,7 +1072,7 @@ namespace TheBackfield.Services
                     segments.Add(segment);
                 }
 
-                if (((chain[i].EntityType == typeof(Pass) && (i > 0 || !play.Pass.Completion))
+                if (((chain[i].EntityType == typeof(Pass) && (i > 0 || (!play.Pass.Completion && play.Interception == null)))
                         || chain[i].EntityType == typeof(Interception))
                     && i < chain.Count() - 1)
                 {
