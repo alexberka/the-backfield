@@ -4,6 +4,7 @@ using TheBackfield.Interfaces;
 using TheBackfield.Models;
 using TheBackfield.Utilities;
 using System.Xml.Linq;
+using Microsoft.AspNetCore.Routing.Patterns;
 
 namespace TheBackfield.Services;
 
@@ -197,15 +198,14 @@ public class GameService : IGameService
             }
         }
 
-        // Remove kickoffs, turnovers, empty plays, or plays that were nullified by penalties
+        // Remove kickoffs, turnovers, empty plays
         List<Play> countedPlays = drive
             .Where((p) => p.Kickoff == null
                 && p.TeamId == nextPlay.TeamId
-                && p.PrevPlayId != null
-                && !p.Penalties.Any((pp) => pp.Enforced == true && pp.NoPlay == true))
+                && p.PrevPlayId != null)
             .ToList();
 
-        gameStream.DrivePlays = countedPlays.Count;
+        gameStream.DrivePlays = countedPlays.Count();
         gameStream.DrivePositionStart = nextPlay.FieldPositionStart;
         gameStream.DriveYards = 0;
         gameStream.DriveTime = 0;
@@ -226,12 +226,17 @@ public class GameService : IGameService
             {
                 gameStream.DriveYards = ((gameStream.DrivePositionStart - countedPlays[countedPlays.Count - 1].FieldPositionStart) * (currentPlay?.TeamId == game?.HomeTeamId ? -1 : 1)) ?? 0;
             }
+            else if (nextPlay.Down != 0)
+            {
+                gameStream.DriveYards = ((gameStream.DrivePositionStart - nextPlay.FieldPositionStart) * (currentPlay?.TeamId == game?.HomeTeamId ? -1 : 1)) ?? 0;
+            }
             // else count to end
             else
             {
                 gameStream.DriveYards = ((gameStream.DrivePositionStart - countedPlays[countedPlays.Count - 1].FieldPositionEnd) * (currentPlay?.TeamId == game?.HomeTeamId ? -1 : 1)) ?? 0;
             }
         }
+        gameStream.DrivePlays = countedPlays.Where((p) => !p.Penalties.Any((pp) => pp.Enforced && pp.NoPlay)).Count();
 
         return gameStream;
     }
