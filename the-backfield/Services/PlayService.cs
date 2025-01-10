@@ -1273,13 +1273,14 @@ namespace TheBackfield.Services
                         addition += $", forced by {fumble.FumbleForcedBy.Name()}";
                     }
                     addition += ".";
-                    if (fumble.FumbleRecoveredBy == null)
-                    {
-                        addition += $" Ball out of bounds at {StatClient.FieldPositionText(segment.FieldEnd, teams[homeId], teams[awayId])}.";
-                    }
                     segments[^1].SegmentText += addition;
 
-                    if (fumble.FumbleRecoveredBy != null)
+                    if (fumble.FumbleRecoveredBy == null)
+                    {
+                        segment.FieldStart = segment.FieldEnd;
+                        segment.SegmentText = $"Ball out of bounds at {StatClient.FieldPositionText(segment.FieldEnd, teams[homeId], teams[awayId])}.";
+                    }
+                    else
                     {
                         segment.SegmentText = $"Fumble recovered by {fumble.FumbleRecoveredBy.Name()} at "
                             + $"{StatClient.FieldPositionText(segment.FieldStart, teams[homeId], teams[awayId])}.";
@@ -1303,8 +1304,8 @@ namespace TheBackfield.Services
                         }
                         segment.SegmentText += ".";
 
-                        segments.Add(segment);
                     }
+                    segments.Add(segment);
                 }
             }
                 
