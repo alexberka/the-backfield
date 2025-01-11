@@ -6,10 +6,10 @@ namespace TheBackfield.Data
 {
     public class WatchGame : Hub<IWatchClient>
     {
-        private readonly IGameService _gameService;
-        public WatchGame(IGameService gameService)
+        private readonly IGameStreamService _gameStreamService;
+        public WatchGame(IGameStreamService gameStreamService)
         {
-            _gameService = gameService;
+            _gameStreamService = gameStreamService;
         }
         public override async Task OnConnectedAsync()
         {
@@ -20,7 +20,7 @@ namespace TheBackfield.Data
         }
         public async Task Report(int gameId)
         {
-            GameStreamDTO? gameStream = await _gameService.GetGameStreamAsync(gameId);
+            GameStreamDTO? gameStream = await _gameStreamService.GetGameStreamAsync(gameId);
             if (gameStream != null)
             {
                 await Clients.Group($"watch-{gameId}").UpdateGameStream(gameStream);

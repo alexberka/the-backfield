@@ -1,3 +1,4 @@
+using System.Net.Http;
 using Microsoft.AspNetCore.SignalR;
 using TheBackfield.Data;
 using TheBackfield.DTOs;
@@ -26,7 +27,7 @@ public static class PlayEndpoints
             .WithOpenApi()
             .Produces<Play>(StatusCodes.Status200OK);
 
-        group.MapPost("/plays", async (IPlayService playService, IGameService gameService, IHubContext <WatchGame, IWatchClient> streamContext, PlaySubmitDTO playSubmit) =>
+        group.MapPost("/plays", async (IPlayService playService, PlaySubmitDTO playSubmit) =>
         {
             ResponseDTO<Play> response = await playService.CreatePlayAsync(playSubmit);
             if (response.Error || response.Resource == null)
@@ -34,19 +35,12 @@ public static class PlayEndpoints
                 return response.ThrowError();
             }
 
-            GameStreamDTO? gameStream = await gameService.GetGameStreamAsync(playSubmit.GameId);
-            if (gameStream != null)
-            {
-                await streamContext.Clients.Groups($"watch-{playSubmit.GameId}").UpdateGameStream(gameStream);
-            }
-
-
             return Results.Created($"/plays/{response.Resource.Id}", response.Resource);
         })
             .WithOpenApi()
             .Produces<Play>(StatusCodes.Status201Created);
 
-        group.MapDelete("/plays/{playId}", async (IPlayService playService, IGameService gameService, int playId, string sessionKey) =>
+        group.MapDelete("/plays/{playId}", async (IPlayService playService, int playId, string sessionKey) =>
         {
             ResponseDTO<Play> response = await playService.DeletePlayAsync(playId, sessionKey);
             if (response.Error)
@@ -61,9 +55,9 @@ public static class PlayEndpoints
 
         // For PlaySegment testing
         // v---------------------v
-        //group.MapGet("/play-segments/{playId}", async (IPlayService playService, int playId) =>
+        //group.MapGet("/play-segments/{playId}", async (IGameStreamService gameStreamService, int playId) =>
         //{
-        //    List<PlaySegmentDTO> response = await playService.GetPlaySegmentsAsync(playId);
+        //    List<PlaySegmentDTO> response = await gameStreamService.GetPlaySegmentsAsync(playId);
 
         //    return Results.Ok(response);
         //})

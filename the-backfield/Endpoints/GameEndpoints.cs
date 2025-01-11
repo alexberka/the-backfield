@@ -38,9 +38,9 @@ public static class GameEndpoints
             .WithOpenApi()
             .Produces<Game>(StatusCodes.Status200OK);
 
-        group.MapGet("/games/{gameId}/game-stream", async (IGameService gameService, int gameId) =>
+        group.MapGet("/games/{gameId}/game-stream", async (IGameStreamService gameStreamService, int gameId) =>
         {
-            GameStreamDTO? gameStream = await gameService.GetGameStreamAsync(gameId);
+            GameStreamDTO? gameStream = await gameStreamService.GetGameStreamAsync(gameId);
             if (gameStream == null)
             {
                 return Results.BadRequest("Invalid gameId");
