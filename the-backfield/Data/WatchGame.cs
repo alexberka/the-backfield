@@ -15,6 +15,7 @@ namespace TheBackfield.Data
         {
             int.TryParse(Context.GetHttpContext()?.Request.Query["gameId"], out int gameId);
             await Groups.AddToGroupAsync(Context.ConnectionId, $"watch-{gameId}");
+
             await Clients.Group($"watch-{gameId}").SayHello($"Greetings {Context.ConnectionId}, you're watching {gameId}!");
         }
         public async Task Report(int gameId)
