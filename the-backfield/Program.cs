@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Json;
-using the_backfield.Interfaces.PlayEntities;
 using TheBackfield.Data;
 using TheBackfield.Endpoints;
 using TheBackfield.Interfaces;
@@ -25,6 +24,8 @@ builder.Services.AddScoped<IGameRepository, GameRepository>();
 
 builder.Services.AddScoped<IGameStatService, GameStatService>();
 builder.Services.AddScoped<IGameStatRepository, GameStatRepository>();
+
+builder.Services.AddScoped<IGameStreamService, GameStreamService>();
 
 builder.Services.AddScoped<IPenaltyService, PenaltyService>();
 builder.Services.AddScoped<IPenaltyRepository, PenaltyRepository>();

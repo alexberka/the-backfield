@@ -10,10 +10,8 @@ namespace TheBackfield.Tests
     {
         private readonly GameService _gameService;
         private readonly Mock<IGameRepository> _mockGameRepository;
-        private readonly Mock<IPlayRepository> _mockPlayRepository;
         private readonly Mock<IUserRepository> _mockUserRepository;
         private readonly Mock<ITeamRepository> _mockTeamRepository;
-        private readonly Mock<IPlayService> _mockPlayService;
         private static User TestUser { get; } = new User { Id = 14, Username = "testman", SessionKey = "Hfue82jL_14", Uid = "testmanjenkins" };
         private static Team TestTeam1 { get; } = new Team { Id = 2, LocationName = "Cybernet", Nickname = "Testmen", UserId = 14 };
         private static Team TestTeam2 { get; } = new Team { Id = 4, LocationName = "Matrix", Nickname = "Andersons", UserId = 14 };
@@ -33,11 +31,9 @@ namespace TheBackfield.Tests
         public GameServiceTests()
         {
             _mockGameRepository = new Mock<IGameRepository>();
-            _mockPlayRepository = new Mock<IPlayRepository>();
             _mockUserRepository = new Mock<IUserRepository>();
             _mockTeamRepository = new Mock<ITeamRepository>();
-            _mockPlayService = new Mock<IPlayService>();
-            _gameService = new GameService(_mockGameRepository.Object, _mockPlayRepository.Object, _mockTeamRepository.Object, _mockUserRepository.Object, _mockPlayService.Object);
+            _gameService = new GameService(_mockGameRepository.Object, _mockTeamRepository.Object, _mockUserRepository.Object);
         }
 
         [Fact]

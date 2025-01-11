@@ -1,7 +1,7 @@
 ﻿using TheBackfield.DTOs;
 using TheBackfield.Models.PlayEntities;
 
-namespace the_backfield.Interfaces.PlayEntities
+namespace TheBackfield.Interfaces.PlayEntities
 {
     public interface ISafetyRepository
     {
