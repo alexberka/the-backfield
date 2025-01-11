@@ -2,6 +2,7 @@ using TheBackfield.DTOs.GameStream;
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces;
 using TheBackfield.Models;
+using TheBackfield.Data;
 
 namespace TheBackfield.Endpoints;
 
@@ -104,5 +105,7 @@ public static class GameEndpoints
         })
             .WithOpenApi()
             .Produces(StatusCodes.Status204NoContent);
+
+        group.MapHub<WatchGame>($"watch");
     }
 }
