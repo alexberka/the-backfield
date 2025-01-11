@@ -63,13 +63,14 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
         policy.WithOrigins("http://localhost:3000")
-            .AllowAnyOrigin()
+            .AllowCredentials()
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
