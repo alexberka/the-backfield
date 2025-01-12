@@ -13,6 +13,7 @@ namespace TheBackfield.Models.PlayEntities
         public int? RecoveredById { get; set; } = null;
         public Player? RecoveredBy { get; set; }
         public int? RecoveredAt { get; set; }
-
+        public int LooseBallYardage { get; set; }
+        public int ReturnYardage { get; set; }
     }
 }

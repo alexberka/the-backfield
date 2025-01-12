@@ -14,5 +14,7 @@ namespace TheBackfield.Models.PlayEntities
         public Player? Returner { get; set; }
         public int? FieldedAt { get; set; } = null;
         public bool Touchback { get; set; }
+        public int Distance { get; set; }
+        public int ReturnYardage { get; set; }
     }
 }

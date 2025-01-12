@@ -12,5 +12,6 @@ namespace TheBackfield.Models.PlayEntities
         public Player? Kicker { get; set; }
         public bool Good { get; set; }
         public bool Fake { get; set; }
+        public int Distance { get; set; }
     }
 }
