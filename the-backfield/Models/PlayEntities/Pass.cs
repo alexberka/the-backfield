@@ -13,6 +13,8 @@ namespace TheBackfield.Models.PlayEntities
         public int? ReceiverId { get; set; } = null;
         public Player? Receiver { get; set; }
         public bool Completion { get; set; } = false;
+        public int PassYardage { get; set; }
+        public int ReceptionYardage { get; set; }
         public bool Sack { get; set; } = false;
         public bool Spike { get; set; } = false;
     }
