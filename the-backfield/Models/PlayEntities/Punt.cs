@@ -16,5 +16,7 @@ namespace TheBackfield.Models.PlayEntities
         public bool FairCatch { get; set; }
         public bool Touchback { get; set; }
         public bool Fake { get; set; }
+        public int Distance { get; set; }
+        public int ReturnYardage { get; set; }
     }
 }

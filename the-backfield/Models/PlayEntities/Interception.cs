@@ -11,5 +11,6 @@ namespace TheBackfield.Models.PlayEntities
         public int? InterceptedById { get; set; } = null;
         public Player InterceptedBy { get; set; }
         public int? InterceptedAt { get; set; }
+        public int ReturnYardage { get; set; }
     }
 }

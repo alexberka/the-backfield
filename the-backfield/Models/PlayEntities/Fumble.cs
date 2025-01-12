@@ -16,5 +16,8 @@ namespace TheBackfield.Models.PlayEntities
         public int? FumbleRecoveredById { get; set; } = null;
         public Player? FumbleRecoveredBy { get; set; }
         public int? RecoveredAt { get; set; }
+        public int LooseBallYardage { get; set; }
+        public int ReturnYardage { get; set; }
+        public string YardageType { get; set; } = "";
     }
 }
