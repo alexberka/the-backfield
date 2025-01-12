@@ -164,9 +164,12 @@ namespace TheBackfield.Utilities
 
                     foreach (Player? carrier in cedesPossession)
                     {
-                        if (gainsPossession.Contains(carrier))
+                        if (carrier != null && gainsPossession.Count((p) => p?.Id == carrier.Id) != 0)
                         {
-                            gainsPossession.Remove(carrier);
+                            var player = gainsPossession
+                                .Select((p, index) => new { p?.Id, Index = index })
+                                .SingleOrDefault((item) => item.Id == carrier.Id);
+                            gainsPossession.RemoveAt(player?.Index ?? -1);
                         }
                     }
                     if (gainsPossession.Count() == 1)
