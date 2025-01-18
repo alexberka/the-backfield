@@ -58,6 +58,37 @@ public class PassRepository : IPassRepository
 
         return newPass;
     }
+    public async Task<Pass?> CreatePassAsync(Pass newPass)
+    {
+        Play? play = await _dbContext.Plays
+            .AsNoTracking()
+            .SingleOrDefaultAsync(p => p.Id == newPass.PlayId);
+
+        if (play == null)
+        {
+            return null;
+        }
+
+        Player? passer = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == newPass.PasserId);
+        if (passer == null || passer.TeamId != play.TeamId)
+        {
+            return null;
+        }
+
+        if (newPass.ReceiverId != null)
+        {
+            Player? receiver = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == newPass.ReceiverId);
+            if (receiver == null || receiver.TeamId != play.TeamId)
+            {
+                return null;
+            }
+        }
+
+        _dbContext.Passes.Add(newPass);
+        await _dbContext.SaveChangesAsync();
+
+        return newPass;
+    }
 
     public Task<bool> DeletePassAsync(int passId)
     {

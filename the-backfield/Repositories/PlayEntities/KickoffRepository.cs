@@ -55,6 +55,37 @@ public class KickoffRepository : IKickoffRepository
 
         return newKickoff;
     }
+    public async Task<Kickoff?> CreateKickoffAsync(Kickoff newKickoff)
+    {
+        Play? play = await _dbContext.Plays.FindAsync(newKickoff.PlayId);
+        if (play == null)
+        {
+            return null;
+        }
+
+        if (newKickoff.KickerId != null)
+        {
+            Player? kicker = await _dbContext.Players.FindAsync(newKickoff.KickerId);
+            if (kicker == null)
+            {
+                return null;
+            }
+        }
+
+        if (newKickoff.ReturnerId != null)
+        {
+            Player? returner = await _dbContext.Players.FindAsync(newKickoff.ReturnerId);
+            if (returner == null)
+            {
+                return null;
+            }
+        }
+
+        _dbContext.Kickoffs.Add(newKickoff);
+        await _dbContext.SaveChangesAsync();
+
+        return newKickoff;
+    }
 
     public Task<bool> DeleteKickoffAsync(int kickoffId)
     {

@@ -45,6 +45,27 @@ public class RushRepository : IRushRepository
 
         return newRush;
     }
+    public async Task<Rush?> CreateRushAsync(Rush newRush)
+    {
+        Play? play = await _dbContext.Plays
+            .AsNoTracking()
+            .SingleOrDefaultAsync(p => p.Id == newRush.PlayId);
+        if (play == null)
+        {
+            return null;
+        }
+
+        Player? rusher = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == newRush.RusherId);
+        if (rusher == null || rusher.TeamId != play.TeamId)
+        {
+            return null;
+        }
+
+        _dbContext.Rushes.Add(newRush);
+        await _dbContext.SaveChangesAsync();
+
+        return newRush;
+    }
 
     public Task<bool> DeleteRushAsync(int rushId)
     {

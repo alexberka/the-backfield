@@ -7,6 +7,7 @@ namespace TheBackfield.Interfaces.PlayEntities
     {
         Task<Touchdown?> GetSingleTouchdownAsync(int touchdownId);
         Task<Touchdown?> CreateTouchdownAsync(PlaySubmitDTO playSubmit);
+        Task<Touchdown?> CreateTouchdownAsync(Touchdown newTouchdown);
         Task<Touchdown?> UpdateTouchdownAsync(PlaySubmitDTO playSubmit);
         Task<bool> DeleteTouchdownAsync(int touchdownId);
     }

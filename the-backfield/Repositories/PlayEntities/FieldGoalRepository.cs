@@ -46,6 +46,28 @@ public class FieldGoalRepository : IFieldGoalRepository
 
         return newFieldGoal;
     }
+    public async Task<FieldGoal?> CreateFieldGoalAsync(FieldGoal newFieldGoal)
+    {
+        Play? play = await _dbContext.Plays.FindAsync(newFieldGoal.PlayId);
+        if (play == null)
+        {
+            return null;
+        }
+
+        if (newFieldGoal.KickerId != null)
+        {
+            Player? kicker = await _dbContext.Players.FindAsync(newFieldGoal.KickerId);
+            if (kicker == null)
+            {
+                return null;
+            }
+        }
+
+        _dbContext.FieldGoals.Add(newFieldGoal);
+        await _dbContext.SaveChangesAsync();
+
+        return newFieldGoal;
+    }
 
     public Task<bool> DeleteFieldGoalAsync(int fieldGoalId)
     {

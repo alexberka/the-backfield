@@ -44,6 +44,28 @@ public class InterceptionRepository : IInterceptionRepository
 
         return newInterception;
     }
+    public async Task<Interception?> CreateInterceptionAsync(Interception newInterception)
+    {
+        Play? play = await _dbContext.Plays.FindAsync(newInterception.PlayId);
+        if (play == null)
+        {
+            return null;
+        }
+
+        if (newInterception.InterceptedById != null)
+        {
+            Player? defender = await _dbContext.Players.FindAsync(newInterception.InterceptedById);
+            if (defender == null)
+            {
+                return null;
+            }
+        }
+
+        _dbContext.Interceptions.Add(newInterception);
+        await _dbContext.SaveChangesAsync();
+
+        return newInterception;
+    }
 
     public Task<bool> DeleteInterceptionAsync(int interceptionId)
     {

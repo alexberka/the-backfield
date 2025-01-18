@@ -67,6 +67,46 @@ public class FumbleRepository : IFumbleRepository
 
         return newFumble;
     }
+    public async Task<Fumble?> CreateFumbleAsync(Fumble newFumble)
+    {
+        Play? play = await _dbContext.Plays
+            .AsNoTracking()
+            .SingleOrDefaultAsync(p => p.Id == newFumble.PlayId);
+        if (play == null)
+        {
+            return null;
+        }
+
+        if (newFumble.FumbleCommittedById != null)
+        {
+            Player? fumbler = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == newFumble.FumbleCommittedById);
+            if (fumbler == null)
+            {
+                return null;
+            }
+        }
+        if (newFumble.FumbleForcedById != null)
+        {
+            Player? forcedBy = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == newFumble.FumbleForcedById);
+            if (forcedBy == null)
+            {
+                return null;
+            }
+        }
+        if (newFumble.FumbleRecoveredById != null)
+        {
+            Player? recoveredBy = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == newFumble.FumbleRecoveredById);
+            if (recoveredBy == null)
+            {
+                return null;
+            }
+        }
+
+        _dbContext.Fumbles.Add(newFumble);
+        await _dbContext.SaveChangesAsync();
+
+        return newFumble;
+    }
 
     public Task<bool> DeleteFumbleAsync(int fumbleId)
     {
