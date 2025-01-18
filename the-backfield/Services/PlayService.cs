@@ -639,7 +639,7 @@ namespace TheBackfield.Services
                 return new ResponseDTO<Play> { ErrorMessage = "Unable to reconcile play data to establish possession, ensure all ids are provided and accurate" };
             }
 
-            Play playTest = PlaySubmitDTOAsPlay(playSubmit);
+            Play queuedPlay = PlaySubmitDTOAsPlay(playSubmit);
 
             // Create Play
             Play? createdPlay = await _playRepository.CreatePlayAsync(playSubmit);
@@ -648,23 +648,23 @@ namespace TheBackfield.Services
                 return new ResponseDTO<Play>();
             }
 
-            playSubmit.Id = createdPlay.Id;
-
             // Add auxiliary entities
-            // Create a Pass, if PasserId is defined
-            if (playSubmit.PasserId != null)
+            // Create a Pass, if Pass exists
+            if (queuedPlay.Pass != null)
             {
-                Pass? pass = await _passRepository.CreatePassAsync(playSubmit);
+                queuedPlay.Pass.PlayId = createdPlay.Id;
+                Pass? pass = await _passRepository.CreatePassAsync(queuedPlay.Pass);
                 if (pass == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "Pass failed to create, process terminated" };
                 }
             }
 
-            // Create a Rush, if RusherId is defined
-            if (playSubmit.RusherId != null)
+            // Create a Rush, if Rush exists
+            if (queuedPlay.Rush != null)
             {
-                Rush? rush = await _rushRepository.CreateRushAsync(playSubmit);
+                queuedPlay.Rush.PlayId = createdPlay.Id;
+                Rush? rush = await _rushRepository.CreateRushAsync(queuedPlay.Rush);
                 if (rush == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "Rush failed to create, process terminated" };
@@ -672,105 +672,116 @@ namespace TheBackfield.Services
             }
 
             // Create Tackles
-            foreach (int tacklerId in tacklesToCreate)
+            foreach (Tackle queuedTackle in queuedPlay.Tacklers)
             {
-                Tackle? tackle = await _tackleRepository.CreateTackleAsync(createdPlay.Id, tacklerId);
+                queuedTackle.PlayId = createdPlay.Id;
+                Tackle? tackle = await _tackleRepository.CreateTackleAsync(queuedTackle);
                 if (tackle == null)
                 {
-                    return new ResponseDTO<Play> { ErrorMessage = $"Tackle for id {tacklerId} failed to create, process terminated" };
+                    return new ResponseDTO<Play> { ErrorMessage = $"Tackle for id {queuedTackle.TacklerId} failed to create, process terminated" };
                 }
             }
 
             // Create PassDefenses
-            foreach (int defenderId in passDefensesToCreate)
+            foreach (PassDefense queuedPassDefense in queuedPlay.PassDefenders)
             {
-                PassDefense? passDefense = await _passDefenseRepository.CreatePassDefenseAsync(createdPlay.Id, defenderId);
+                queuedPassDefense.PlayId = createdPlay.Id;
+                PassDefense? passDefense = await _passDefenseRepository.CreatePassDefenseAsync(queuedPassDefense);
                 if (passDefense == null)
                 {
-                    return new ResponseDTO<Play> { ErrorMessage = $"PassDefense for id {defenderId} failed to create, process terminated" };
+                    return new ResponseDTO<Play> { ErrorMessage = $"PassDefense for id {queuedPassDefense.DefenderId} failed to create, process terminated" };
                 }
             }
 
-            // Create Kickoff, Punt, or FieldGoal
-            if (playSubmit.Kickoff)
+            // Create Kickoff, Punt, or FieldGoal, if exists
+            if (queuedPlay.Kickoff != null)
             {
-                Kickoff? kickoff = await _kickoffRepository.CreateKickoffAsync(playSubmit);
+                queuedPlay.Kickoff.PlayId = createdPlay.Id;
+                Kickoff? kickoff = await _kickoffRepository.CreateKickoffAsync(queuedPlay.Kickoff);
                 if (kickoff == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "Kickoff failed to create, process terminated" };
                 }
             }
-            else if (playSubmit.Punt)
+            else if (queuedPlay.Punt != null)
             {
-                Punt? punt = await _puntRepository.CreatePuntAsync(playSubmit);
+                queuedPlay.Punt.PlayId = createdPlay.Id;
+                Punt? punt = await _puntRepository.CreatePuntAsync(queuedPlay.Punt);
                 if (punt == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "Punt failed to create, process terminated" };
                 }
             }
-            else if (playSubmit.FieldGoal)
+            else if (queuedPlay.FieldGoal != null)
             {
-                FieldGoal? fieldGoal = await _fieldGoalRepository.CreateFieldGoalAsync(playSubmit);
+                queuedPlay.FieldGoal.PlayId = createdPlay.Id;
+                FieldGoal? fieldGoal = await _fieldGoalRepository.CreateFieldGoalAsync(queuedPlay.FieldGoal);
                 if (fieldGoal == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "FieldGoal failed to create, process terminated" };
                 }
             }
 
-            // Create KickBlock
-            if (playSubmit.KickBlocked)
+            // Create KickBlock, if exists
+            if (queuedPlay.KickBlock != null)
             {
-                KickBlock? kickBlock = await _kickBlockRepository.CreateKickBlockAsync(playSubmit);
+                queuedPlay.KickBlock.PlayId = createdPlay.Id;
+                KickBlock? kickBlock = await _kickBlockRepository.CreateKickBlockAsync(queuedPlay.KickBlock);
                 if (kickBlock == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "KickBlock failed to create, process terminated" };
                 }
             }
 
-            // Create Touchdown
-            if (playSubmit.TouchdownPlayerId != null)
+            // Create Touchdown, if exists
+            if (queuedPlay.Touchdown != null)
             {
-                Touchdown? touchdown = await _touchdownRepository.CreateTouchdownAsync(playSubmit);
+                queuedPlay.Touchdown.PlayId = createdPlay.Id;
+                Touchdown? touchdown = await _touchdownRepository.CreateTouchdownAsync(queuedPlay.Touchdown);
                 if (touchdown == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "Touchdown failed to create, process terminated" };
                 }
             }
 
-            // Create ExtraPoint
-            if (playSubmit.ExtraPoint)
+            // Create ExtraPoint, if exists
+            if (queuedPlay.ExtraPoint != null)
             {
-                ExtraPoint? extraPoint = await _extraPointRepository.CreateExtraPointAsync(playSubmit);
+                queuedPlay.ExtraPoint.PlayId = createdPlay.Id;
+                ExtraPoint? extraPoint = await _extraPointRepository.CreateExtraPointAsync(queuedPlay.ExtraPoint);
                 if (extraPoint == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "ExtraPoint failed to create, process terminated" };
                 }
             }
 
-            // Create Conversion
-            if (playSubmit.Conversion)
+            // Create Conversion, if exists
+            if (queuedPlay.Conversion != null)
             {
-                Conversion? conversion = await _conversionRepository.CreateConversionAsync(playSubmit);
+                queuedPlay.Conversion.PlayId = createdPlay.Id;
+                Conversion? conversion = await _conversionRepository.CreateConversionAsync(queuedPlay.Conversion);
                 if (conversion == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "Conversion failed to create, process terminated" };
                 }
             }
 
-            // Create Interception
-            if (playSubmit.InterceptedById != null)
+            // Create Interception, if exists
+            if (queuedPlay.Interception != null)
             {
-                Interception? interception = await _interceptionRepository.CreateInterceptionAsync(playSubmit);
+                queuedPlay.Interception.PlayId = createdPlay.Id;
+                Interception? interception = await _interceptionRepository.CreateInterceptionAsync(queuedPlay.Interception);
                 if (interception == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "Interception failed to create, process terminated" };
                 }
             }
 
-            // Create Safety
-            if (playSubmit.Safety)
+            // Create Safety, if exists
+            if (queuedPlay.Safety != null)
             {
-                Safety? safety = await _safetyRepository.CreateSafetyAsync(playSubmit);
+                queuedPlay.Safety.PlayId = createdPlay.Id;
+                Safety? safety = await _safetyRepository.CreateSafetyAsync(queuedPlay.Safety);
                 if (safety == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "Safety failed to create, process terminated" };
@@ -778,40 +789,40 @@ namespace TheBackfield.Services
             }
 
             // Create Fumbles
-            foreach (FumbleSubmitDTO fumble in playSubmit.Fumbles)
+            foreach (Fumble queuedFumble in queuedPlay.Fumbles)
             {
-                fumble.PlayId = playSubmit.Id;
-                Fumble? newFumble = await _fumbleRepository.CreateFumbleAsync(fumble);
-                if (newFumble == null)
+                queuedFumble.PlayId = createdPlay.Id;
+                Fumble? fumble = await _fumbleRepository.CreateFumbleAsync(queuedFumble);
+                if (fumble == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "Fumble failed to create, process terminated" };
                 }
             }
             
             // Create Laterals
-            foreach (LateralSubmitDTO lateral in playSubmit.Laterals)
+            foreach (Lateral queuedLateral in queuedPlay.Laterals)
             {
-                lateral.PlayId = playSubmit.Id;
-                Lateral? newLateral = await _lateralRepository.CreateLateralAsync(lateral);
-                if (newLateral == null)
+                queuedLateral.PlayId = createdPlay.Id;
+                Lateral? lateral = await _lateralRepository.CreateLateralAsync(queuedLateral);
+                if (lateral == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "Lateral failed to create, process terminated" };
                 }
             }
 
             // Create PlayPenalties
-            foreach (PlayPenaltySubmitDTO playPenalty in playSubmit.Penalties)
+            foreach (PlayPenalty queuedPlayPenalty in queuedPlay.Penalties)
             {
-                playPenalty.PlayId = playSubmit.Id;
-                PlayPenalty? newPlayPenalty = await _playPenaltyRepository.CreatePlayPenaltyAsync(playPenalty);
-                if (newPlayPenalty == null)
+                queuedPlayPenalty.PlayId = createdPlay.Id;
+                PlayPenalty? playPenalty = await _playPenaltyRepository.CreatePlayPenaltyAsync(queuedPlayPenalty);
+                if (playPenalty == null)
                 {
                     return new ResponseDTO<Play> { ErrorMessage = "Penalty failed to create, process terminated" };
                 }
             }
 
             // If no errors have been thrown, broadcast updated gamestream to viewers
-            await _gameStreamService.BroadcastGameStream(playSubmit.GameId);
+            await _gameStreamService.BroadcastGameStream(createdPlay.GameId ?? 0);
 
             return new ResponseDTO<Play> { Resource = createdPlay };
         }
@@ -858,6 +869,7 @@ namespace TheBackfield.Services
         {
             Play newPlay = new()
             {
+                Id = playSubmit.Id,
                 PrevPlayId = playSubmit.PrevPlayId,
                 GameId = playSubmit.GameId,
                 TeamId = playSubmit.TeamId,
@@ -877,6 +889,7 @@ namespace TheBackfield.Services
             {
                 newPlay.Pass = new()
                 {
+                    PlayId = newPlay.Id,
                     PasserId = playSubmit.PasserId,
                     ReceiverId = playSubmit.ReceiverId,
                     Completion = playSubmit.Completion
@@ -888,6 +901,7 @@ namespace TheBackfield.Services
             {
                 newPlay.Rush = new()
                 {
+                    PlayId = newPlay.Id,
                     RusherId = playSubmit.RusherId
                 };
             }
@@ -899,6 +913,7 @@ namespace TheBackfield.Services
                 {
                     Tackle newTackle = new()
                     {
+                        PlayId = newPlay.Id,
                         TacklerId = tacklerId
                     };
                     newPlay.Tacklers.Add(newTackle);
@@ -912,6 +927,7 @@ namespace TheBackfield.Services
                 {
                     PassDefense newPassDefense = new()
                     {
+                        PlayId = newPlay.Id,
                         DefenderId = defenderId
                     };
                     newPlay.PassDefenders.Add(newPassDefense);
@@ -923,6 +939,7 @@ namespace TheBackfield.Services
             {
                 newPlay.Kickoff = new()
                 {
+                    PlayId = newPlay.Id,
                     KickerId = playSubmit.KickerId,
                     ReturnerId = playSubmit.KickReturnerId,
                     FieldedAt = playSubmit.KickFieldedAt,
@@ -933,6 +950,7 @@ namespace TheBackfield.Services
             {
                 newPlay.Punt = new()
                 {
+                    PlayId = newPlay.Id,
                     KickerId = playSubmit.KickerId,
                     ReturnerId = playSubmit.KickReturnerId,
                     FieldedAt = playSubmit.KickFieldedAt,
@@ -945,6 +963,7 @@ namespace TheBackfield.Services
             {
                 newPlay.FieldGoal = new()
                 {
+                    PlayId = newPlay.Id,
                     KickerId = playSubmit.KickerId,
                     Good = playSubmit.KickGood,
                     Fake = playSubmit.KickFake
@@ -956,6 +975,7 @@ namespace TheBackfield.Services
             {
                 newPlay.KickBlock = new()
                 {
+                    PlayId = newPlay.Id,
                     BlockedById = playSubmit.KickBlockedById,
                     RecoveredById = playSubmit.KickBlockRecoveredById,
                     RecoveredAt = playSubmit.KickBlockRecoveredAt
@@ -967,6 +987,7 @@ namespace TheBackfield.Services
             {
                 newPlay.Touchdown = new()
                 {
+                    PlayId = newPlay.Id,
                     PlayerId = playSubmit.TouchdownPlayerId
                 };
             }
@@ -976,6 +997,7 @@ namespace TheBackfield.Services
             {
                 newPlay.ExtraPoint = new()
                 {
+                    PlayId = newPlay.Id,
                     KickerId = playSubmit.ExtraPointKickerId,
                     Good = playSubmit.ExtraPointGood,
                     Fake = playSubmit.ExtraPointFake,
@@ -989,6 +1011,7 @@ namespace TheBackfield.Services
             {
                 newPlay.Conversion = new()
                 {
+                    PlayId = newPlay.Id,
                     PasserId = playSubmit.ConversionPasserId,
                     ReceiverId = playSubmit.ConversionReceiverId,
                     RusherId = playSubmit.ConversionRusherId,
@@ -1003,6 +1026,7 @@ namespace TheBackfield.Services
             {
                 newPlay.Interception = new()
                 {
+                    PlayId = newPlay.Id,
                     InterceptedById = playSubmit.InterceptedById,
                     InterceptedAt = playSubmit.InterceptedAt
                 };
@@ -1013,6 +1037,7 @@ namespace TheBackfield.Services
             {
                 Safety newSafety = new()
                 {
+                    PlayId = newPlay.Id,
                     CedingPlayerId = playSubmit.CedingPlayerId
                 };
             }
@@ -1022,6 +1047,7 @@ namespace TheBackfield.Services
             {
                 Fumble newFumble = new()
                 {
+                    PlayId = newPlay.Id,
                     FumbleCommittedById = fumbleSubmit.FumbleCommittedById,
                     FumbledAt = fumbleSubmit.FumbledAt,
                     FumbleForcedById = fumbleSubmit.FumbleForcedById,
@@ -1036,6 +1062,7 @@ namespace TheBackfield.Services
             {
                 Lateral newLateral = new()
                 {
+                    PlayId = newPlay.Id,
                     PrevCarrierId = lateralSubmit.PrevCarrierId,
                     NewCarrierId = lateralSubmit.NewCarrierId,
                     PossessionAt = lateralSubmit.PossessionAt,
@@ -1049,6 +1076,7 @@ namespace TheBackfield.Services
             {
                 PlayPenalty newPlayPenalty = new()
                 {
+                    PlayId = newPlay.Id,
                     PenaltyId = playPenaltySubmit.PenaltyId,
                     PlayerId = playPenaltySubmit.PlayerId,
                     TeamId = playPenaltySubmit.TeamId ?? 0,
