@@ -42,6 +42,28 @@ public class TackleRepository : ITackleRepository
 
         return newTackle;
     }
+    public async Task<Tackle?> CreateTackleAsync(Tackle newTackle)
+    {
+        Play? play = await _dbContext.Plays
+            .AsNoTracking()
+            .Include(p => p.Game)
+            .SingleOrDefaultAsync(p => p.Id == newTackle.PlayId);
+        if (play == null || play.Game == null)
+        {
+            return null;
+        }
+
+        Player? tackler = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == newTackle.TacklerId);
+        if (tackler == null || !new int[] { play.Game.HomeTeamId, play.Game.AwayTeamId }.Contains(tackler.TeamId))
+        {
+            return null;
+        }
+
+        _dbContext.Tackles.Add(newTackle);
+        await _dbContext.SaveChangesAsync();
+
+        return newTackle;
+    }
 
     public Task<bool> DeleteTackleAsync(int tackleId)
     {

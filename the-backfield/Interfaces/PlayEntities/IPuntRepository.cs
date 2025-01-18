@@ -7,6 +7,7 @@ public interface IPuntRepository
 {
     Task<Punt?> GetSinglePuntAsync(int puntId);
     Task<Punt?> CreatePuntAsync(PlaySubmitDTO playSubmit);
+    Task<Punt?> CreatePuntAsync(Punt newPunt);
     Task<Punt?> UpdatePuntAsync(PlaySubmitDTO playSubmit);
     Task<bool> DeletePuntAsync(int puntId);
 }

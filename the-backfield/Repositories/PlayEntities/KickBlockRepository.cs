@@ -52,6 +52,36 @@ public class KickBlockRepository : IKickBlockRepository
 
         return newKickBlock;
     }
+    public async Task<KickBlock?> CreateKickBlockAsync(KickBlock newKickBlock)
+    {
+        Play? play = await _dbContext.Plays.FindAsync(newKickBlock.PlayId);
+        if (play == null)
+        {
+            return null;
+        }
+
+        if (newKickBlock.BlockedById != null)
+        {
+            Player? blocker = await _dbContext.Players.FindAsync(newKickBlock.BlockedById);
+            if (blocker == null)
+            {
+                return null;
+            }
+        }
+        if (newKickBlock.RecoveredById != null)
+        {
+            Player? recovery = await _dbContext.Players.FindAsync(newKickBlock.RecoveredById);
+            if (recovery == null)
+            {
+                return null;
+            }
+        }
+
+        _dbContext.KickBlocks.Add(newKickBlock);
+        await _dbContext.SaveChangesAsync();
+
+        return newKickBlock;
+    }
 
     public Task<bool> DeleteKickBlockAsync(int kickBlockId)
     {

@@ -45,6 +45,31 @@ namespace TheBackfield.Repositories.PlayEntities
 
             return newTouchdown;
         }
+        public async Task<Touchdown?> CreateTouchdownAsync(Touchdown newTouchdown)
+        {
+            Play? play = await _dbContext.Plays
+                .AsNoTracking()
+                .Include(p => p.Game)
+                .SingleOrDefaultAsync(p => p.Id == newTouchdown.PlayId);
+            if (play == null || play.Game == null)
+            {
+                return null;
+            }
+
+            if (newTouchdown.PlayerId != null)
+            {
+                Player? player = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == newTouchdown.PlayerId);
+                if (player == null || !new int[] { play.Game.HomeTeamId, play.Game.AwayTeamId }.Contains(player.TeamId))
+                {
+                    return null;
+                }
+            }
+
+            _dbContext.Touchdowns.Add(newTouchdown);
+            await _dbContext.SaveChangesAsync();
+
+            return newTouchdown;
+        }
 
         public Task<bool> DeleteTouchdownAsync(int touchdownId)
         {

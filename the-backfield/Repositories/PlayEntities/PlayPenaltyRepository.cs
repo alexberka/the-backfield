@@ -60,6 +60,37 @@ public class PlayPenaltyRepository : IPlayPenaltyRepository
 
         return newPlayPenalty;
     }
+    public async Task<PlayPenalty?> CreatePlayPenaltyAsync(PlayPenalty newPlayPenalty)
+    {
+        Play? play = await _dbContext.Plays
+            .AsNoTracking()
+            .Include(p => p.Game)
+            .SingleOrDefaultAsync(p => p.Id == newPlayPenalty.PlayId);
+        if (play == null || play.Game == null || !new int[] {play.Game.HomeTeamId, play.Game.AwayTeamId}.Contains(newPlayPenalty.TeamId))
+        {
+            return null;
+        }
+
+        Penalty? penalty = await _dbContext.Penalties.FindAsync(newPlayPenalty.PenaltyId);
+        if (penalty == null)
+        {
+            return null;
+        }
+
+        if (newPlayPenalty.PlayerId != null)
+        {
+            Player? player = await _dbContext.Players.FindAsync(newPlayPenalty.PlayerId);
+            if (player == null || player.TeamId != newPlayPenalty.TeamId)
+            {
+                return null;
+            }
+        }
+
+        _dbContext.PlayPenalties.Add(newPlayPenalty);
+        await _dbContext.SaveChangesAsync();
+
+        return newPlayPenalty;
+    }
 
     public Task<bool> DeletePlayPenaltyAsync(int playPenaltyId)
     {

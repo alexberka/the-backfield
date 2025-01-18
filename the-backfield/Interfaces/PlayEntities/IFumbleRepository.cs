@@ -7,6 +7,7 @@ public interface IFumbleRepository
 {
     Task<Fumble?> GetSingleFumbleAsync(int fumbleId);
     Task<Fumble?> CreateFumbleAsync(FumbleSubmitDTO fumbleSubmit);
+    Task<Fumble?> CreateFumbleAsync(Fumble newFumble);
     Task<Fumble?> UpdateFumbleAsync(FumbleSubmitDTO fumbleSubmit);
     Task<bool> DeleteFumbleAsync(int fumbleId);
 }

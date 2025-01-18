@@ -56,6 +56,37 @@ public class PuntRepository : IPuntRepository
 
         return newPunt;
     }
+    public async Task<Punt?> CreatePuntAsync(Punt newPunt)
+    {
+        Play? play = await _dbContext.Plays.FindAsync(newPunt.PlayId);
+        if (play == null)
+        {
+            return null;
+        }
+
+        if (newPunt.KickerId != null)
+        {
+            Player? kicker = await _dbContext.Players.FindAsync(newPunt.KickerId);
+            if (kicker == null)
+            {
+                return null;
+            }
+        }
+
+        if (newPunt.ReturnerId != null)
+        {
+            Player? returner = await _dbContext.Players.FindAsync(newPunt.ReturnerId);
+            if (returner == null)
+            {
+                return null;
+            }
+        }
+
+        _dbContext.Punts.Add(newPunt);
+        await _dbContext.SaveChangesAsync();
+
+        return newPunt;
+    }
 
     public Task<bool> DeletePuntAsync(int puntId)
     {

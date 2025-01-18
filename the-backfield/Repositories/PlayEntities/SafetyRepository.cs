@@ -46,6 +46,32 @@ namespace TheBackfield.Repositories.PlayEntities
             return newSafety;
         }
 
+        public async Task<Safety?> CreateSafetyAsync(Safety newSafety)
+        {
+            Play? play = await _dbContext.Plays
+                .AsNoTracking()
+                .Include(p => p.Game)
+                .SingleOrDefaultAsync(p => p.Id == newSafety.PlayId);
+            if (play == null || play.Game == null)
+            {
+                return null;
+            }
+
+            if (newSafety.CedingPlayerId != null)
+            {
+                Player? ceding = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == newSafety.CedingPlayerId);
+                if (ceding == null || !new int[] { play.Game.HomeTeamId, play.Game.AwayTeamId }.Contains(ceding.TeamId))
+                {
+                    return null;
+                }
+            }
+
+            _dbContext.Safeties.Add(newSafety);
+            await _dbContext.SaveChangesAsync();
+
+            return newSafety;
+        }
+
         public Task<bool> DeleteSafetyAsync(int safetyId)
         {
             throw new NotImplementedException();

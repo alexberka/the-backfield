@@ -7,6 +7,7 @@ public interface IRushRepository
 {
     Task<Rush?> GetSingleRushAsync(int rushId);
     Task<Rush?> CreateRushAsync(PlaySubmitDTO playSubmit);
+    Task<Rush?> CreateRushAsync(Rush newRush);
     Task<Rush?> UpdateRushAsync(PlaySubmitDTO playSubmit);
     Task<bool> DeleteRushAsync(int rushId);
 }

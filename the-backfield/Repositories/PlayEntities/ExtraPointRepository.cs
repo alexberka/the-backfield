@@ -54,6 +54,36 @@ public class ExtraPointRepository : IExtraPointRepository
 
         return newExtraPoint;
     }
+    public async Task<ExtraPoint?> CreateExtraPointAsync(ExtraPoint newExtraPoint)
+    {
+        Play? play = await _dbContext.Plays.FindAsync(newExtraPoint.PlayId);
+        if (play == null)
+        {
+            return null;
+        }
+
+        if (newExtraPoint.KickerId != null)
+        {
+            Player? kicker = await _dbContext.Players.FindAsync(newExtraPoint.KickerId);
+            if (kicker == null)
+            {
+                return null;
+            }
+        }
+        if (newExtraPoint.ReturnerId != null)
+        {
+            Player? returner = await _dbContext.Players.FindAsync(newExtraPoint.ReturnerId);
+            if (returner == null)
+            {
+                return null;
+            }
+        }
+
+        _dbContext.ExtraPoints.Add(newExtraPoint);
+        await _dbContext.SaveChangesAsync();
+
+        return newExtraPoint;
+    }
 
     public Task<bool> DeleteExtraPointAsync(int extraPointId)
     {

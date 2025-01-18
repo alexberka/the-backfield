@@ -52,6 +52,33 @@ public class LateralRepository : ILateralRepository
 
         return newLateral;
     }
+    public async Task<Lateral?> CreateLateralAsync(Lateral newLateral)
+    {
+        Play? play = await _dbContext.Plays
+            .AsNoTracking()
+            .SingleOrDefaultAsync(p => p.Id == newLateral.PlayId);
+
+        if (play == null)
+        {
+            return null;
+        }
+
+        Player? prevCarrier = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == newLateral.PrevCarrierId);
+        if (prevCarrier == null)
+        {
+            return null;
+        }
+        Player? newCarrier = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == newLateral.NewCarrierId);
+        if (newCarrier == null)
+        {
+            return null;
+        }
+
+        _dbContext.Laterals.Add(newLateral);
+        await _dbContext.SaveChangesAsync();
+
+        return newLateral;
+    }
 
     public Task<bool> DeleteLateralAsync(int lateralId)
     {
