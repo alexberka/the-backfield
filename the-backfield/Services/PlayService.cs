@@ -87,7 +87,7 @@ namespace TheBackfield.Services
             User? user = await _userRepository.GetUserBySessionKeyAsync(playSubmit.SessionKey);
             Game? game = await _gameRepository.GetSingleGameAsync(playSubmit.GameId);
             ResponseDTO<Game> gameCheck = SessionKeyClient.VerifyAccess(playSubmit.SessionKey, user, game);
-            if (gameCheck.Error)
+            if (gameCheck.Error || game == null)
             {
                 return gameCheck.ToType<Play>();
             }
@@ -639,6 +639,8 @@ namespace TheBackfield.Services
                 return new ResponseDTO<Play> { ErrorMessage = "Unable to reconcile play data to establish possession, ensure all ids are provided and accurate" };
             }
 
+            Play playTest = PlaySubmitDTOAsPlay(playSubmit);
+
             // Create Play
             Play? createdPlay = await _playRepository.CreatePlayAsync(playSubmit);
             if (createdPlay == null)
@@ -850,6 +852,217 @@ namespace TheBackfield.Services
         public Task<ResponseDTO<Play>> UpdatePlayAsync(PlaySubmitDTO playSubmit)
         {
             throw new NotImplementedException();
+        }
+
+        private Play PlaySubmitDTOAsPlay(PlaySubmitDTO playSubmit)
+        {
+            Play newPlay = new()
+            {
+                PrevPlayId = playSubmit.PrevPlayId,
+                GameId = playSubmit.GameId,
+                TeamId = playSubmit.TeamId,
+                FieldPositionStart = playSubmit.FieldPositionStart,
+                FieldPositionEnd = playSubmit.FieldPositionEnd,
+                Down = playSubmit.Down,
+                ToGain = playSubmit.ToGain,
+                ClockStart = playSubmit.ClockStart,
+                ClockEnd = playSubmit.ClockEnd,
+                GamePeriod = playSubmit.GamePeriod,
+                Notes = playSubmit.Notes
+            };
+
+            // Add auxiliary entities
+            // Create a Pass, if PasserId is defined
+            if (playSubmit.PasserId != null)
+            {
+                newPlay.Pass = new()
+                {
+                    PasserId = playSubmit.PasserId,
+                    ReceiverId = playSubmit.ReceiverId,
+                    Completion = playSubmit.Completion
+                };
+            }
+
+            // Create a Rush, if RusherId is defined
+            if (playSubmit.RusherId != null)
+            {
+                newPlay.Rush = new()
+                {
+                    RusherId = playSubmit.RusherId
+                };
+            }
+
+            // Create Tackles
+            foreach (int tacklerId in playSubmit.TacklerIds)
+            {
+                if (!newPlay.Tacklers.Any(t => t.TacklerId == tacklerId))
+                {
+                    Tackle newTackle = new()
+                    {
+                        TacklerId = tacklerId
+                    };
+                    newPlay.Tacklers.Add(newTackle);
+                }
+            }
+
+            // Create PassDefenses
+            foreach (int defenderId in playSubmit.PassDefenderIds)
+            {
+                if (!newPlay.PassDefenders.Any(pd => pd.DefenderId == defenderId))
+                {
+                    PassDefense newPassDefense = new()
+                    {
+                        DefenderId = defenderId
+                    };
+                    newPlay.PassDefenders.Add(newPassDefense);
+                }
+            }
+
+            // Create Kickoff, Punt, or FieldGoal
+            if (playSubmit.Kickoff)
+            {
+                newPlay.Kickoff = new()
+                {
+                    KickerId = playSubmit.KickerId,
+                    ReturnerId = playSubmit.KickReturnerId,
+                    FieldedAt = playSubmit.KickFieldedAt,
+                    Touchback = playSubmit.KickTouchback
+                };
+            }
+            else if (playSubmit.Punt)
+            {
+                newPlay.Punt = new()
+                {
+                    KickerId = playSubmit.KickerId,
+                    ReturnerId = playSubmit.KickReturnerId,
+                    FieldedAt = playSubmit.KickFieldedAt,
+                    FairCatch = playSubmit.KickFairCatch,
+                    Touchback = playSubmit.KickTouchback,
+                    Fake = playSubmit.KickFake
+                };
+            }
+            else if (playSubmit.FieldGoal)
+            {
+                newPlay.FieldGoal = new()
+                {
+                    KickerId = playSubmit.KickerId,
+                    Good = playSubmit.KickGood,
+                    Fake = playSubmit.KickFake
+                };
+            }
+
+            // Create KickBlock
+            if (playSubmit.KickBlocked)
+            {
+                newPlay.KickBlock = new()
+                {
+                    BlockedById = playSubmit.KickBlockedById,
+                    RecoveredById = playSubmit.KickBlockRecoveredById,
+                    RecoveredAt = playSubmit.KickBlockRecoveredAt
+                };
+            }
+
+            // Create Touchdown
+            if (playSubmit.TouchdownPlayerId != null)
+            {
+                newPlay.Touchdown = new()
+                {
+                    PlayerId = playSubmit.TouchdownPlayerId
+                };
+            }
+
+            // Create ExtraPoint
+            if (playSubmit.ExtraPoint)
+            {
+                newPlay.ExtraPoint = new()
+                {
+                    KickerId = playSubmit.ExtraPointKickerId,
+                    Good = playSubmit.ExtraPointGood,
+                    Fake = playSubmit.ExtraPointFake,
+                    DefensiveConversion = playSubmit.DefensiveConversion,
+                    ReturnerId = playSubmit.ConversionReturnerId
+                };
+            }
+
+            // Create Conversion
+            if (playSubmit.Conversion)
+            {
+                newPlay.Conversion = new()
+                {
+                    PasserId = playSubmit.ConversionPasserId,
+                    ReceiverId = playSubmit.ConversionReceiverId,
+                    RusherId = playSubmit.ConversionRusherId,
+                    Good = playSubmit.ConversionGood,
+                    DefensiveConversion = playSubmit.DefensiveConversion,
+                    ReturnerId = playSubmit.ConversionReturnerId
+                };
+            }
+
+            // Create Interception
+            if (playSubmit.InterceptedById != null)
+            {
+                newPlay.Interception = new()
+                {
+                    InterceptedById = playSubmit.InterceptedById,
+                    InterceptedAt = playSubmit.InterceptedAt
+                };
+            }
+
+            // Create Safety
+            if (playSubmit.Safety)
+            {
+                Safety newSafety = new()
+                {
+                    CedingPlayerId = playSubmit.CedingPlayerId
+                };
+            }
+
+            // Create Fumbles
+            foreach (FumbleSubmitDTO fumbleSubmit in playSubmit.Fumbles)
+            {
+                Fumble newFumble = new()
+                {
+                    FumbleCommittedById = fumbleSubmit.FumbleCommittedById,
+                    FumbledAt = fumbleSubmit.FumbledAt,
+                    FumbleForcedById = fumbleSubmit.FumbleForcedById,
+                    FumbleRecoveredById = fumbleSubmit.FumbleRecoveredById,
+                    RecoveredAt = fumbleSubmit.FumbleRecoveredAt
+                };
+                newPlay.Fumbles.Add(newFumble);
+            }
+
+            // Create Laterals
+            foreach (LateralSubmitDTO lateralSubmit in playSubmit.Laterals)
+            {
+                Lateral newLateral = new()
+                {
+                    PrevCarrierId = lateralSubmit.PrevCarrierId,
+                    NewCarrierId = lateralSubmit.NewCarrierId,
+                    PossessionAt = lateralSubmit.PossessionAt,
+                    CarriedTo = lateralSubmit.CarriedTo
+                };
+                newPlay.Laterals.Add(newLateral);
+            }
+
+            // Create PlayPenalties
+            foreach (PlayPenaltySubmitDTO playPenaltySubmit in playSubmit.Penalties)
+            {
+                PlayPenalty newPlayPenalty = new()
+                {
+                    PenaltyId = playPenaltySubmit.PenaltyId,
+                    PlayerId = playPenaltySubmit.PlayerId,
+                    TeamId = playPenaltySubmit.TeamId ?? 0,
+                    Enforced = playPenaltySubmit.Enforced,
+                    EnforcedFrom = playPenaltySubmit.EnforcedFrom,
+                    NoPlay = playPenaltySubmit.NoPlay,
+                    LossOfDown = playPenaltySubmit.LossOfDown,
+                    AutoFirstDown = playPenaltySubmit.AutoFirstDown,
+                    Yardage = playPenaltySubmit.Yardage ?? 0
+                };
+                newPlay.Penalties.Add(newPlayPenalty);
+            }
+
+            return newPlay;
         }
 
         private async Task<(int possessionTeamId, bool incompleteChain)> VerifyPossessionChainAsync(PlaySubmitDTO playSubmit, int homeTeamId, int awayTeamId)
