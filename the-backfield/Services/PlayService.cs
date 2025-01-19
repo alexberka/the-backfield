@@ -1,4 +1,5 @@
 ﻿using TheBackfield.DTOs;
+using TheBackfield.DTOs.GameStream;
 using TheBackfield.DTOs.PlayEntities;
 using TheBackfield.Interfaces;
 using TheBackfield.Interfaces.PlayEntities;
@@ -641,6 +642,8 @@ namespace TheBackfield.Services
 
             Play queuedPlay = PlaySubmitDTOAsPlay(playSubmit);
 
+            queuedPlay = await CalculatePlayStatsAsync(queuedPlay, game);
+
             // Create Play
             Play? createdPlay = await _playRepository.CreatePlayAsync(playSubmit);
             if (createdPlay == null)
@@ -1188,6 +1191,229 @@ namespace TheBackfield.Services
             }
 
             return (player.TeamId == homeTeamId ? homeTeamId : awayTeamId, false);
+        }
+
+        private async Task<Play> CalculatePlayStatsAsync(Play play, Game game)
+        {
+            // GetPossessionChain uses ids on Fumbles and Laterals for identification in the recursion
+            // So if they're new (don't have ids), temporary ids must be assigned
+            // Store index in list to zero out on before function return (avoid 500 errors on attempted creation)
+            List<int> newFumbleIndexes = [];
+            foreach (Fumble fumble in play.Fumbles)
+            {
+                if (fumble.Id == 0)
+                {
+                    fumble.Id = play.Fumbles.Select(f => f.Id).Max() + 1;
+                    newFumbleIndexes.Add(play.Fumbles.IndexOf(fumble));
+                }
+            }
+            List<int> newLateralIndexes = [];
+            foreach (Lateral lateral in play.Laterals)
+            {
+                if (lateral.Id == 0)
+                {
+                    lateral.Id = play.Laterals.Select(f => f.Id).Max() + 1;
+                    newLateralIndexes.Add(play.Laterals.IndexOf(lateral));
+                }
+            }
+
+            List<PossessionChangeDTO> chain = StatClient.GetPossessionChain(play)[0];
+
+            int homeId = game.HomeTeamId;
+            int awayId = game.AwayTeamId;
+
+            Dictionary<int, int> teamSigns = new()
+            {
+                {homeId, 1},
+                {awayId, -1}
+            };
+
+            List<PlaySegmentDTO> segments = [];
+
+            for (int i = 0; i < chain.Count(); i++)
+            {
+                if (chain[i].EntityType == typeof(Kickoff) && i > 0 && play.Kickoff != null)
+                {
+                    play.Kickoff.Distance = (chain[i].ToPlayerAt - chain[i].FromPlayerAt ?? 0) * teamSigns[play.TeamId ?? 0];
+                    // If the kickoff is a touchback, the possession chain has completed.
+                    if (play.Kickoff.Touchback)
+                    {
+                        i = chain.Count();
+                        continue;
+                    }
+
+                    // If there is another change in the chain, a return was attempted.
+                    if (i + 1 < chain.Count())
+                    {
+                        play.Kickoff.ReturnYardage = (chain[i + 1].FromPlayerAt - chain[i].ToPlayerAt ?? 0) * teamSigns[play.TeamId == homeId ? awayId : homeId];
+                        i++;
+                    }
+                }
+
+                if (chain[i].EntityType == typeof(Punt) && i > 0 && play.Punt != null)
+                {
+                    play.Punt.Distance = (chain[i].ToPlayerAt - chain[i].FromPlayerAt ?? 0) * teamSigns[play.TeamId ?? 0];
+
+                    if (play.Punt.FairCatch || play.Punt.Touchback)
+                    {
+                        i = chain.Count();
+                        continue;
+                    }
+
+                    if (i + 1 < chain.Count() && chain[i + 1].EntityType == typeof(Punt))
+                    {
+                        play.Punt.ReturnYardage = (chain[i + 1].FromPlayerAt - chain[i].ToPlayerAt ?? 0) * teamSigns[play.TeamId == homeId ? awayId : homeId];
+                        i++;
+                    }
+                }
+
+                if (chain[i].EntityType == typeof(KickBlock) && play.KickBlock != null)
+                {
+                    play.KickBlock.LooseBallYardage = Math.Abs(play.FieldPositionStart - chain[i].ToPlayerAt ?? 0); 
+                    if (i + 1 < chain.Count())
+                    {
+                        Player? recoveredBy = await _playerRepository.GetSinglePlayerAsync(play.KickBlock.RecoveredById ?? 0);
+                        if (recoveredBy == null)
+                        {
+                            continue;
+                        }
+                        play.KickBlock.ReturnYardage = (chain[i + 1].FromPlayerAt - chain[i].ToPlayerAt ?? 0) * teamSigns[recoveredBy.TeamId];
+                    }
+                }
+
+                if (chain[i].EntityType == typeof(Pass)
+                    && play.Pass != null
+                    && play.Interception == null)
+                {
+                    if (chain[i].ToPlayerId != 0 && i > 0 && i < chain.Count() - 1)
+                    {
+                        play.Pass.PassYardage = (chain[i + 1].FromPlayerAt - chain[i].FromPlayerAt ?? 0) * teamSigns[play.TeamId ?? 0];
+                        play.Pass.ReceptionYardage = (chain[i + 1].FromPlayerAt - chain[i].FromPlayerAt ?? 0) * teamSigns[play.TeamId ?? 0];
+                    }
+                    // An incomplete pass with tacklers and no interception is a sack, sack as negative pass yards
+                    else if (!play.Pass.Completion && play.Tacklers.Count() > 0)
+                    {
+                        play.Pass.Sack = true;
+                    }
+                }
+
+                if (chain[i].EntityType == typeof(Interception) && i < chain.Count() - 1 && play.Interception != null)
+                {
+                    play.Interception.ReturnYardage = (chain[i + 1].FromPlayerAt - chain[i].ToPlayerAt ?? 0) * teamSigns[play.TeamId == homeId ? awayId : homeId];
+                }
+
+                if (chain[i].EntityType == typeof(Rush) && i < chain.Count() - 1 && play.Rush != null)
+                {
+                    play.Rush.Yardage = (chain[i + 1].FromPlayerAt - chain[i].ToPlayerAt ?? 0) * teamSigns[play.TeamId ?? 0];
+                }
+
+                if (chain[i].EntityType == typeof(Lateral))
+                {
+                    Lateral? lateral = play.Laterals.SingleOrDefault(l => l.Id == chain[i].EntityId);
+                    if (lateral == null)
+                    {
+                        continue;
+                    }
+
+                    Player? newCarrier = await _playerRepository.GetSinglePlayerAsync(lateral.NewCarrierId ?? 0);
+                    if (newCarrier == null)
+                    {
+                        continue;
+                    }
+
+                    lateral.CarriedTo = chain[i + 1].FromPlayerAt;
+                    lateral.Yardage = (chain[i + 1].FromPlayerAt - chain[i].ToPlayerAt ?? 0) * teamSigns[newCarrier.TeamId];
+
+                    if (newCarrier.TeamId == play.TeamId)
+                    {
+                        if (play.Pass != null)
+                        {
+                            // Only counts as pass yardage if occurring after the pass in the chain
+                            if (i > chain.FindIndex(link => link.EntityType == typeof(Pass)))
+                            {
+                                lateral.YardageType = "pass";
+                                play.Pass.PassYardage += lateral.Yardage;
+                            }
+                        }
+                        else if (chain.Any(link => link.EntityType == typeof(Rush)))
+                        {
+                            lateral.YardageType = "rush";
+                        }
+                        else
+                        {
+                            lateral.YardageType = "return";
+                        }
+                    }
+                    else
+                    {
+                        lateral.YardageType = "return";
+                    }
+                }
+
+                if (chain[i].EntityType == typeof(Fumble) && chain[i].ToPlayerId != 0)
+                {
+                    Fumble? fumble = play.Fumbles.SingleOrDefault(f => f.Id == chain[i].EntityId);
+                    if (fumble == null)
+                    {
+                        continue;
+                    }
+
+                    fumble.LooseBallYardage = Math.Abs(chain[i].ToPlayerAt - chain[i].FromPlayerAt ?? 0);
+
+                    if (chain[i].ToPlayerId != 0)
+                    {
+
+                        Player? newCarrier = await _playerRepository.GetSinglePlayerAsync(fumble.FumbleRecoveredById ?? 0);
+                        if (newCarrier == null)
+                        {
+                            continue;
+                        }
+
+                        fumble.ReturnYardage = (chain[i + 1].FromPlayerAt - chain[i].ToPlayerAt ?? 0) * teamSigns[newCarrier.TeamId];
+
+                        if (newCarrier.TeamId == play.TeamId)
+                        {
+                            if (play.Pass != null)
+                            {
+                                // Only counts as pass yardage if occurring after the pass in the chain
+                                if (i > chain.FindIndex(link => link.EntityType == typeof(Pass)))
+                                {
+                                    fumble.YardageType = "pass";
+                                    play.Pass.PassYardage += fumble.ReturnYardage;
+                                }
+                            }
+                            else if (chain.Any(link => link.EntityType == typeof(Rush)))
+                            {
+                                fumble.YardageType = "rush";
+                            }
+                            else
+                            {
+                                fumble.YardageType = "return";
+                            }
+                        }
+                        else
+                        {
+                            fumble.YardageType = "return";
+                        }
+                    }
+                }
+            }
+
+            if (play.FieldGoal != null)
+            {
+                play.FieldGoal.Distance = 60 - (play.FieldPositionStart ?? 0) * teamSigns[play.TeamId ?? 0] + 8;
+            }
+
+            foreach (int index in newFumbleIndexes)
+            {
+                play.Fumbles[index].Id = 0;
+            }
+            foreach (int index in newLateralIndexes)
+            {
+                play.Laterals[index].Id = 0;
+            }
+
+            return play;
         }
     }
 }
