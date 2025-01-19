@@ -4,8 +4,6 @@ namespace TheBackfield.DTOs
 {
     public class PlayerStatsDTO
     {
-        public int PlayerId { get; set; }
-        public Player Player { get; set; } = new();
         public int PassAttempts { get; set; }
         public int PassCompletions { get; set; }
         public int PassYards { get; set; }
