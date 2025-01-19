@@ -396,14 +396,14 @@ namespace TheBackfield.Utilities
                     EntityId = play.Rush.Id,
                 });
             }
-            if (possessionChanges[possessionChanges.Count() - 1].ToPlayerId != 0)
+            if (possessionChanges[^1].ToPlayerId != 0)
             {
                 possessionChanges.Add(new()
                 {
-                    FromPlayerId = possessionChanges[possessionChanges.Count() - 1].ToPlayerId,
+                    FromPlayerId = possessionChanges[^1].ToPlayerId,
                     FromPlayerAt = play.FieldPositionEnd,
-                    EntityType = possessionChanges[possessionChanges.Count() - 1].EntityType,
-                    EntityId = possessionChanges[possessionChanges.Count() - 1].EntityId,
+                    EntityType = possessionChanges[^1].EntityType,
+                    EntityId = possessionChanges[^1].EntityId,
                 });
             }
 

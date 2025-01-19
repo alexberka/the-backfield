@@ -14,6 +14,7 @@ namespace TheBackfield.Models.PlayEntities
         public Player NewCarrier { get; set; }
         public int? PossessionAt { get; set; }
         public int? CarriedTo { get; set; }
+        public int Yardage { get; set; }
         public string YardageType { get; set; } = "";
     }
 }
