@@ -105,9 +105,31 @@ namespace TheBackfield.Services
 
             GameStreamDTO gameStream = new(game, nextPlay);
 
+
             gameStream.HomeTeamScore = homeTeamScore;
             gameStream.AwayTeamScore = awayTeamScore;
             gameStream.LastPlay = lastPlay;
+
+            // Derive player stats from the plays and populate team lists appropriately
+            List<PlayerStatsDTO> playerStatsList = StatClient.ParsePlayerStats(game.Plays);
+            IEnumerable<Player> allPlayers = (game.HomeTeam?.Players ?? []).Concat(game.AwayTeam?.Players ?? []);
+            foreach (PlayerStatsDTO stats in playerStatsList)
+            {
+                stats.PlayerInfo = allPlayers.SingleOrDefault(player => player.Id == stats.PlayerId);
+            }
+            if (game.HomeTeam != null)
+            {
+                gameStream.HomeTeamPlayerStats = playerStatsList.Where(ps => game.HomeTeam.Players.Any(player => player.Id == ps.PlayerId)).ToList();
+                foreach (PlayerStatsDTO stats in gameStream.HomeTeamPlayerStats)
+                {
+                    stats.PlayerInfo = game.HomeTeam.Players.Single(player => player.Id == stats.PlayerId);
+                }
+            }
+            if (game.AwayTeam != null)
+            {
+                gameStream.AwayTeamPlayerStats = playerStatsList.Where(ps => game.AwayTeam.Players.Any(player => player.Id == ps.PlayerId)).ToList();
+                
+            }
 
             // The drive always has at least one play in it (that play may be an empty play if at start of game or currentPlay is otherwise null)
             List<Play> drive = [currentPlay ?? new()];

@@ -5,7 +5,7 @@ namespace TheBackfield.DTOs
     public class PlayerStatsDTO
     {
         public int PlayerId { get; set; }
-        public Player Player { get; set; } = new();
+        public Player? PlayerInfo { get; set; }
         public int PassAttempts { get; set; }
         public int PassCompletions { get; set; }
         public int PassYards { get; set; }
@@ -22,7 +22,7 @@ namespace TheBackfield.DTOs
         public int Tackles { get; set; }
         public int SoloTackles { get; set; }
         public int TacklesForLoss { get; set; }
-        public int Sacks { get; set; }
+        public double Sacks { get; set; }
         public int InterceptionsReceived { get; set; }
         public int InterceptionReturnYards { get; set; }
         public int InterceptionReturnTouchdowns { get; set; }

@@ -255,9 +255,264 @@ namespace TheBackfield.Utilities
 
         public static List<PlayerStatsDTO> ParsePlayerStats(List<Play> plays)
         {
-            List<PlayerStatsDTO> playerStats = [];
+            // ParsePlayerStats does not yet populate the following PlayerStatsDTO properties:
+            // PassingTouchdowns
+            // TacklesForLoss
+            List<PlayerStatsDTO> statsList = [];
 
-            return playerStats;
+            foreach (Play play in plays.Where(p => !p.Penalties.Any(penalty => penalty.Enforced && penalty.NoPlay)))
+            {
+                if (play.Pass != null)
+                {
+                    if (play.Pass.PasserId != null)
+                    {
+                        PlayerStatsDTO? passerStats = statsList.SingleOrDefault(ps => ps.PlayerId == play.Pass.PasserId);
+                        if (passerStats == null)
+                        {
+                            passerStats = new() { PlayerId = (int)play.Pass.PasserId };
+                            statsList.Add(passerStats);
+                        }
+                        if (!play.Pass.Sack)
+                        {
+                            passerStats.PassAttempts++;
+                        }
+                        if (play.Pass.Completion)
+                        {
+                            passerStats.PassCompletions++;
+                            passerStats.PassYards += play.Pass.PassYardage;
+                        }
+                        if (play.Interception != null)
+                        {
+                            passerStats.InterceptionsThrown++;
+                            if (play.Interception.InterceptedById != null)
+                            {
+                                PlayerStatsDTO? interceptStats = statsList.SingleOrDefault(ps => ps.PlayerId == play.Interception.InterceptedById);
+                                if (interceptStats == null)
+                                {
+                                    interceptStats = new() { PlayerId = (int)play.Interception.InterceptedById };
+                                    statsList.Add(interceptStats);
+                                }
+                                interceptStats.InterceptionsReceived++;
+                                interceptStats.InterceptionReturnYards += play.Interception.ReturnYardage;
+                                if (play.Touchdown?.PlayerId == interceptStats.PlayerId)
+                                {
+                                    interceptStats.InterceptionReturnTouchdowns++;
+                                }
+                            }
+                        }
+                    }
+                    if (play.Pass.ReceiverId != null)
+                    {
+                        PlayerStatsDTO? receiverStats = statsList.SingleOrDefault(ps => ps.PlayerId == play.Pass.ReceiverId);
+                        if (receiverStats == null)
+                        {
+                            receiverStats = new() { PlayerId = (int)play.Pass.ReceiverId };
+                            statsList.Add(receiverStats);
+                        }
+                        receiverStats.ReceivingTargets++;
+                        if (play.Pass.Completion)
+                        {
+                            receiverStats.Receptions++;
+                            receiverStats.ReceivingYards += play.Pass.ReceptionYardage;
+                        }
+                        if (play.Touchdown?.PlayerId == receiverStats.PlayerId)
+                        {
+                            receiverStats.ReceivingTouchdowns++;
+                        }
+                    }
+                }
+                if (play.Rush != null && play.Rush.RusherId != null)
+                {
+                    PlayerStatsDTO? rusherStats = statsList.SingleOrDefault(ps => ps.PlayerId == play.Rush.RusherId);
+                    if (rusherStats == null)
+                    {
+                        rusherStats = new() { PlayerId = (int)play.Rush.RusherId };
+                        statsList.Add(rusherStats);
+                    }
+                    rusherStats.RushAttempts++;
+                    rusherStats.RushYards += play.Rush.Yardage;
+                    if (play.Touchdown != null && play.Touchdown.PlayerId == rusherStats.PlayerId)
+                    {
+                        rusherStats.RushTouchdowns++;
+                    }
+                }
+                foreach (Tackle tackler in play.Tacklers)
+                {
+                    if (tackler.TacklerId != null)
+                    {
+                        PlayerStatsDTO? tacklerStats = statsList.SingleOrDefault(ps => ps.PlayerId == tackler.TacklerId);
+                        if (tacklerStats == null)
+                        {
+                            tacklerStats = new() { PlayerId = (int)tackler.TacklerId };
+                            statsList.Add(tacklerStats);
+                        }
+                        tacklerStats.Tackles++;
+                        if (play.Tacklers.Count == 1)
+                        {
+                            tacklerStats.SoloTackles++;
+                        }
+                        // Player records a sack if the sack ended the play (no fumble, tackles must have occurred at the end of the play)
+                        // or the tackler caused the passer to fumble (strip sack)
+                        if (play.Pass != null && 
+                                ((play.Pass.Sack && play.Fumbles.Count == 0)
+                                || play.Fumbles.Any(f => f.FumbleCommittedById == play.Pass.PasserId && f.FumbleForcedById == tacklerStats.PlayerId)))
+                        {
+                            tacklerStats.Sacks += play.Tacklers.Count == 1 ? 1 : 0.5;
+                        }
+                    }
+                }
+                foreach (Fumble fumble in play.Fumbles)
+                {
+                    if (fumble.FumbleCommittedById != null)
+                    {
+                        PlayerStatsDTO? fumblerStats = statsList.SingleOrDefault(ps => ps.PlayerId == fumble.FumbleCommittedById);
+                        if (fumblerStats == null)
+                        {
+                            fumblerStats = new() { PlayerId = (int)fumble.FumbleCommittedById };
+                            statsList.Add(fumblerStats);
+                        }
+                        fumblerStats.FumblesCommitted++;
+                    }
+                    if (fumble.FumbleForcedById != null)
+                    {
+                        PlayerStatsDTO? forcedStats = statsList.SingleOrDefault(ps => ps.PlayerId == fumble.FumbleForcedById);
+                        if (forcedStats == null)
+                        {
+                            forcedStats = new() { PlayerId = (int)fumble.FumbleForcedById };
+                            statsList.Add(forcedStats);
+                        }
+                        forcedStats.FumblesForced++;
+                    }
+                    if (fumble.FumbleRecoveredById != null)
+                    {
+                        PlayerStatsDTO? recoveredStats = statsList.SingleOrDefault(ps => ps.PlayerId == fumble.FumbleRecoveredById);
+                        if (recoveredStats == null)
+                        {
+                            recoveredStats = new() { PlayerId = (int)fumble.FumbleRecoveredById };
+                            statsList.Add(recoveredStats);
+                        }
+                        recoveredStats.FumblesRecovered++;
+                        if (fumble.YardageType == "return")
+                        {
+                            recoveredStats.FumbleReturnYards += fumble.ReturnYardage;
+                            if (play.Touchdown?.PlayerId == recoveredStats.PlayerId)
+                            {
+                                recoveredStats.FumbleReturnTouchdowns++;
+                            }
+                        }
+                    }
+                }
+                if (play.FieldGoal != null && !play.FieldGoal.Fake && play.FieldGoal.KickerId != null)
+                {
+                    PlayerStatsDTO? kickerStats = statsList.SingleOrDefault(ps => ps.PlayerId == play.FieldGoal.KickerId);
+                    if (kickerStats == null)
+                    {
+                        kickerStats = new() { PlayerId = (int)play.FieldGoal.KickerId };
+                        statsList.Add(kickerStats);
+                    }
+                    kickerStats.FieldGoalAttempts++;
+                    kickerStats.FieldGoalsMade += play.FieldGoal.Good ? 1 : 0;
+                }
+                if (play.ExtraPoint != null && !play.ExtraPoint.Fake && play.ExtraPoint.KickerId != null)
+                {
+                    PlayerStatsDTO? kickerStats = statsList.SingleOrDefault(ps => ps.PlayerId == play.ExtraPoint.KickerId);
+                    if (kickerStats == null)
+                    {
+                        kickerStats = new() { PlayerId = (int)play.ExtraPoint.KickerId };
+                        statsList.Add(kickerStats);
+                    }
+                    kickerStats.ExtraPointAttempts++;
+                    kickerStats.ExtraPointsMade += play.ExtraPoint.Good ? 1 : 0;
+                }
+                if (play.Punt != null && !play.Punt.Fake)
+                {
+                    if (play.Punt.KickerId != null)
+                    {
+                        PlayerStatsDTO? kickerStats = statsList.SingleOrDefault(ps => ps.PlayerId == play.Punt.KickerId);
+                        if (kickerStats == null)
+                        {
+                            kickerStats = new() { PlayerId = (int)play.Punt.KickerId };
+                            statsList.Add(kickerStats);
+                        }
+                        kickerStats.Punts++;
+                        kickerStats.PuntYards += play.Punt.Distance;
+                    }
+                    if (play.Punt.ReturnerId != null)
+                    {
+                        PlayerStatsDTO? returnerStats = statsList.SingleOrDefault(ps => ps.PlayerId == play.Punt.ReturnerId);
+                        if (returnerStats == null)
+                        {
+                            returnerStats = new() { PlayerId = (int)play.Punt.ReturnerId };
+                            statsList.Add(returnerStats);
+                        }
+                        returnerStats.PuntReturns++;
+                        returnerStats.PuntReturnYards += play.Punt.ReturnYardage;
+                        if (play.Touchdown?.PlayerId == returnerStats.PlayerId)
+                        {
+                            returnerStats.PuntReturnTouchdowns++;
+                        }
+                    }
+                }
+                if (play.Kickoff != null)
+                {
+                    if (play.Kickoff.KickerId != null)
+                    {
+                        PlayerStatsDTO? kickerStats = statsList.SingleOrDefault(ps => ps.PlayerId == play.Kickoff.KickerId);
+                        if (kickerStats == null)
+                        {
+                            kickerStats = new() { PlayerId = (int)play.Kickoff.KickerId };
+                            statsList.Add(kickerStats);
+                        }
+                        kickerStats.Kickoffs++;
+                        kickerStats.KickoffsForTouchbacks += play.Kickoff.Touchback ? 1 : 0;
+                    }
+                    if (play.Kickoff.ReturnerId != null)
+                    {
+                        PlayerStatsDTO? returnerStats = statsList.SingleOrDefault(ps => ps.PlayerId == play.Kickoff.ReturnerId);
+                        if (returnerStats == null)
+                        {
+                            returnerStats = new() { PlayerId = (int)play.Kickoff.ReturnerId };
+                            statsList.Add(returnerStats);
+                        }
+                        returnerStats.KickoffReturns++;
+                        returnerStats.KickoffReturnYards += play.Kickoff.ReturnYardage;
+                        if (play.Touchdown?.PlayerId == returnerStats.PlayerId)
+                        {
+                            returnerStats.KickoffReturnTouchdowns++;
+                        }
+                    }
+                }
+                foreach (Lateral lateral in play.Laterals)
+                {
+                    if (lateral.NewCarrierId != null)
+                    {
+                        PlayerStatsDTO? newCarrierStats = statsList.SingleOrDefault(ps => ps.PlayerId == lateral.NewCarrierId);
+                        if (newCarrierStats == null)
+                        {
+                            newCarrierStats = new() { PlayerId = (int)lateral.NewCarrierId };
+                            statsList.Add(newCarrierStats);
+                        }
+                        if (lateral.YardageType == "pass")
+                        {
+                            newCarrierStats.ReceivingYards += lateral.Yardage;
+                            if (play.Touchdown?.PlayerId == newCarrierStats.PlayerId)
+                            {
+                                newCarrierStats.ReceivingTouchdowns++;
+                            }
+                        }
+                        else if (lateral.YardageType == "rush")
+                        {
+                            newCarrierStats.RushYards += lateral.Yardage;
+                            if (play.Touchdown?.PlayerId == newCarrierStats.PlayerId)
+                            {
+                                newCarrierStats.RushTouchdowns++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return statsList;
         }
 
         public static List<List<PossessionChangeDTO>> GetPossessionChain(Play play)
