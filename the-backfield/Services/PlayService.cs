@@ -1,4 +1,6 @@
-﻿using TheBackfield.DTOs;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using TheBackfield.DTOs;
 using TheBackfield.DTOs.GameStream;
 using TheBackfield.DTOs.PlayEntities;
 using TheBackfield.Interfaces;
@@ -642,7 +644,9 @@ namespace TheBackfield.Services
 
             Play queuedPlay = PlaySubmitDTOAsPlay(playSubmit);
 
-            queuedPlay = await CalculatePlayStatsAsync(queuedPlay, game);
+            queuedPlay = await CalculatePlayStatsAsync(queuedPlay, game.HomeTeamId, game.AwayTeamId);
+
+            queuedPlay = await AddPlayAuxTeamIdsAsync(queuedPlay, game.HomeTeamId, game.AwayTeamId);
 
             // Create Play
             Play? createdPlay = await _playRepository.CreatePlayAsync(playSubmit);
@@ -1193,7 +1197,7 @@ namespace TheBackfield.Services
             return (player.TeamId == homeTeamId ? homeTeamId : awayTeamId, false);
         }
 
-        private async Task<Play> CalculatePlayStatsAsync(Play play, Game game)
+        private async Task<Play> CalculatePlayStatsAsync(Play play, int homeId, int awayId)
         {
             // GetPossessionChain uses ids on Fumbles and Laterals for identification in the recursion
             // So if they're new (don't have ids), temporary ids must be assigned
@@ -1218,9 +1222,6 @@ namespace TheBackfield.Services
             }
 
             List<PossessionChangeDTO> chain = StatClient.GetPossessionChain(play)[0];
-
-            int homeId = game.HomeTeamId;
-            int awayId = game.AwayTeamId;
 
             Dictionary<int, int> teamSigns = new()
             {
@@ -1411,6 +1412,176 @@ namespace TheBackfield.Services
             foreach (int index in newLateralIndexes)
             {
                 play.Laterals[index].Id = 0;
+            }
+
+            return play;
+        }
+
+        private async Task<Play> AddPlayAuxTeamIdsAsync(Play play, int homeId, int awayId)
+        {
+
+            if (play.Pass != null)
+            {
+                play.Pass.TeamId = play.TeamId ?? 0;
+                if (play.Interception != null)
+                {
+                    play.Interception.TeamId = play.TeamId == homeId ? awayId : homeId;
+                }
+            }
+
+            if (play.Rush != null)
+            {
+                play.Rush.TeamId = play.TeamId ?? 0;
+            }
+
+            if (play.Punt != null)
+            {
+                play.Punt.TeamId = play.TeamId ?? 0;
+                play.Punt.ReturnTeamId = play.TeamId == homeId ? awayId : homeId;
+            }
+
+            if (play.Kickoff != null)
+            {
+                play.Kickoff.TeamId = play.TeamId ?? 0;
+                play.Kickoff.ReturnTeamId = play.TeamId == homeId ? awayId : homeId;
+            }
+
+            if (play.FieldGoal != null)
+            {
+                play.FieldGoal.TeamId = play.TeamId ?? 0;
+            }
+
+            if (play.KickBlock != null)
+            {
+                play.KickBlock.BlockedByTeamId = play.TeamId == homeId ? awayId : homeId;
+                if (play.KickBlock.RecoveredById != null)
+                {
+                    Player? recoveredBy = await _playerRepository.GetSinglePlayerAsync(play.KickBlock.RecoveredById ?? 0);
+                    // See play.Tacklers foreach below for notes
+                    if (recoveredBy?.TeamId == homeId)
+                    {
+                        play.KickBlock.RecoveredByTeamId = homeId;
+                    }
+                    else if (recoveredBy?.TeamId == awayId)
+                    {
+                        play.KickBlock.RecoveredByTeamId = awayId;
+                    }
+                }
+            }
+
+            if (play.Touchdown != null)
+            {
+                play.Touchdown.TeamId = play.FieldPositionEnd == 50 ? homeId : awayId;
+                if (play.ExtraPoint != null)
+                {
+                    play.ExtraPoint.TeamId = play.FieldPositionEnd == 50 ? homeId : awayId;
+                    if (play.ExtraPoint.ReturnerId != null)
+                    {
+                        play.ExtraPoint.ReturnTeamId = play.FieldPositionEnd == 50 ? awayId : homeId;
+                    }
+                }
+                if (play.Conversion != null)
+                {
+                    play.Conversion.TeamId = play.FieldPositionEnd == 50 ? homeId : awayId;
+                    if (play.Conversion.ReturnerId != null)
+                    {
+                        play.Conversion.ReturnTeamId = play.FieldPositionEnd == 50 ? awayId : homeId;
+                    }
+                }
+            }
+
+            if (play.Safety != null)
+            {
+                play.Safety.CedingTeamId = play.FieldPositionEnd == -50 ? homeId : awayId;
+            }
+
+            foreach (Tackle tackle in play.Tacklers)
+            {
+                Player? tackler = await _playerRepository.GetSinglePlayerAsync(tackle.TacklerId ?? 0);
+                if (tackler == null)
+                {
+                    continue;
+                }
+                // Rather than just setting the tackle.TeamId = tackler.TeamId, limit to either homeId or awayId
+                // So if method is called on an old play where the player may have changed teams, tackle.TeamId will
+                // remain 0 (unless tackler switched to opposing team => fix with many-to-many player-team relationship)
+                if (tackler.TeamId == homeId)
+                {
+                    tackle.TeamId = homeId;
+                }
+                else if (tackler.TeamId == awayId)
+                {
+                    tackle.TeamId = awayId;
+                }
+            }
+
+            foreach (PassDefense defense in play.PassDefenders)
+            {
+                // Only defending team can log passDefenses
+                defense.TeamId = play.TeamId == awayId ? homeId : awayId;
+            }
+
+            foreach (Lateral lateral in play.Laterals)
+            {
+                Player? carrier = await _playerRepository.GetSinglePlayerAsync(lateral.NewCarrierId ?? 0);
+                if (carrier == null)
+                {
+                    continue;
+                }
+                // See play.Tacklers foreach above for notes
+                if (carrier.TeamId == homeId)
+                {
+                    lateral.TeamId = homeId;
+                }
+                else if (carrier.TeamId == awayId)
+                {
+                    lateral.TeamId = awayId;
+                }
+            }
+
+            foreach (Fumble fumble in play.Fumbles)
+            {
+                Player? fumbledBy = await _playerRepository.GetSinglePlayerAsync(fumble.FumbleCommittedById ?? 0);
+                if (fumbledBy != null)
+                {
+                    // See play.Tacklers foreach above for notes
+                    if (fumbledBy.TeamId == homeId)
+                    {
+                        fumble.FumbleCommittedByTeamId = homeId;
+                    }
+                    else if (fumbledBy.TeamId == awayId)
+                    {
+                        fumble.FumbleCommittedByTeamId = awayId;
+                    }
+                }
+
+                Player? forcedBy = await _playerRepository.GetSinglePlayerAsync(fumble.FumbleForcedById ?? 0);
+                if (forcedBy != null)
+                {
+                    // See play.Tacklers foreach above for notes
+                    if (forcedBy.TeamId == homeId)
+                    {
+                        fumble.FumbleForcedByTeamId = homeId;
+                    }
+                    else if (forcedBy.TeamId == awayId)
+                    {
+                        fumble.FumbleForcedByTeamId = awayId;
+                    }
+                }
+
+                Player? recoveredBy = await _playerRepository.GetSinglePlayerAsync(fumble.FumbleRecoveredById ?? 0);
+                if (recoveredBy != null)
+                {
+                    // See play.Tacklers foreach above for notes
+                    if (recoveredBy.TeamId == homeId)
+                    {
+                        fumble.FumbleRecoveredByTeamId = homeId;
+                    }
+                    else if (recoveredBy.TeamId == awayId)
+                    {
+                        fumble.FumbleRecoveredByTeamId = awayId;
+                    }
+                }
             }
 
             return play;

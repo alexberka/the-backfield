@@ -10,5 +10,6 @@ namespace TheBackfield.Models.PlayEntities
         public Play? Play { get; set; }
         public int? PlayerId { get; set; } = null;
         public Player? Player { get; set; }
+        public int TeamId { get; set; }
     }
 }

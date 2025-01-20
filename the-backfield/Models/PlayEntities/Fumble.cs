@@ -7,14 +7,17 @@ namespace TheBackfield.Models.PlayEntities
         public int Id { get; set; }
         [Required]
         public int PlayId { get; set; }
-        public Play Play { get; set; }
+        public Play? Play { get; set; }
         public int? FumbleCommittedById { get; set; } = null;
-        public Player FumbleCommittedBy { get; set; }
+        public Player? FumbleCommittedBy { get; set; }
+        public int FumbleCommittedByTeamId { get; set; }
         public int? FumbledAt { get; set; }
         public int? FumbleForcedById { get; set; } = null;
         public Player? FumbleForcedBy { get; set; }
+        public int FumbleForcedByTeamId { get; set; }
         public int? FumbleRecoveredById { get; set; } = null;
         public Player? FumbleRecoveredBy { get; set; }
+        public int FumbleRecoveredByTeamId { get; set; }
         public int? RecoveredAt { get; set; }
         public int LooseBallYardage { get; set; }
         public int ReturnYardage { get; set; }
