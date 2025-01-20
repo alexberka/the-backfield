@@ -10,6 +10,7 @@ namespace TheBackfield.Models.PlayEntities
         public Play? Play { get; set; }
         public int? KickerId { get; set; } = null;
         public Player? Kicker { get; set; }
+        public int TeamId { get; set; }
         public bool Good { get; set; }
         public bool Fake { get; set; }
         public int Distance { get; set; }

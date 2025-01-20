@@ -7,11 +7,12 @@ namespace TheBackfield.Models.PlayEntities
         public int Id { get; set; }
         [Required]
         public int PlayId { get; set; }
-        public Play Play { get; set; }
+        public Play? Play { get; set; }
         public int? PasserId { get; set; } = null;
         public Player? Passer { get; set; }
         public int? ReceiverId { get; set; } = null;
         public Player? Receiver { get; set; }
+        public int TeamId { get; set; }
         public bool Completion { get; set; } = false;
         public int PassYardage { get; set; }
         public int ReceptionYardage { get; set; }
