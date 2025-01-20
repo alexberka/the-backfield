@@ -255,9 +255,6 @@ namespace TheBackfield.Utilities
 
         public static List<PlayerStatsDTO> ParsePlayerStats(List<Play> plays)
         {
-            // ParsePlayerStats does not yet populate the following PlayerStatsDTO properties:
-            // PassingTouchdowns
-            // TacklesForLoss
             List<PlayerStatsDTO> statsList = [];
 
             foreach (Play play in plays.Where(p => !p.Penalties.Any(penalty => penalty.Enforced && penalty.NoPlay)))
@@ -280,6 +277,10 @@ namespace TheBackfield.Utilities
                         {
                             passerStats.PassCompletions++;
                             passerStats.PassYards += play.Pass.PassYardage;
+                            if (play.Touchdown?.TeamId == play.TeamId)
+                            {
+                                passerStats.PassTouchdowns++;
+                            }
                         }
                         if (play.Interception != null)
                         {
@@ -350,6 +351,17 @@ namespace TheBackfield.Utilities
                         if (play.Tacklers.Count == 1)
                         {
                             tacklerStats.SoloTackles++;
+                        }
+                        // Check for tackle for loss (can only occur on scrimmage play)
+                        if (play.TeamId != tackler.TeamId && play.ToGain != null)
+                        {
+                            // If the line of scrimmage is less than the line to gain, then the home team has the ball
+                            bool homeTeamPossession = play.FieldPositionStart < play.ToGain;
+                            if ((homeTeamPossession && play.FieldPositionEnd < play.FieldPositionStart)
+                                || (!homeTeamPossession && play.FieldPositionEnd > play.FieldPositionStart))
+                            {
+                                tacklerStats.TacklesForLoss++;
+                            }
                         }
                         // Player records a sack if the sack ended the play (no fumble, tackles must have occurred at the end of the play)
                         // or the tackler caused the passer to fumble (strip sack)
