@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using TheBackfield.DTOs;
 
 namespace TheBackfield.Models;
 
@@ -18,7 +17,6 @@ public class Player
     [Required]
     public int UserId { get; set; }
     public List<Position> Positions { get; set; } = [];
-    public PlayerStatsDTO Stats { get; set; } = new();
 
     public string Name()
     {

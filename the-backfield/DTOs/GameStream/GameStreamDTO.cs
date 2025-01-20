@@ -12,8 +12,10 @@ namespace TheBackfield.DTOs.GameStream
             _nextPlay = nextPlay;
         }
         public Team? HomeTeam { get { return _game.HomeTeam; } }
+        public List<PlayerStatsDTO> HomeTeamPlayerStats { get; set; } = [];
         public int HomeTeamScore { get; set; }
         public Team? AwayTeam { get { return _game.AwayTeam; } }
+        public List<PlayerStatsDTO> AwayTeamPlayerStats { get; set; } = [];
         public int AwayTeamScore { get; set; }
         public int DrivePlays { get; set; }
         public int? DrivePositionStart { get; set; }
