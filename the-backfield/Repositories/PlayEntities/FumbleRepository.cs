@@ -35,7 +35,7 @@ public class FumbleRepository : IFumbleRepository
                 return null;
             }
         }
-                if (fumbleSubmit.FumbleForcedById != null)
+        if (fumbleSubmit.FumbleForcedById != null)
         {
             Player? forcedBy = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == fumbleSubmit.FumbleForcedById);
             if (forcedBy == null)

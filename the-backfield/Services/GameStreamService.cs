@@ -37,7 +37,7 @@ namespace TheBackfield.Services
             int? toGain = null;
             int? fieldPositionStart = null;
             int? nextTeamId = null;
-            PlayAsSegmentsDTO? lastPlay = null;
+            PlaySubmitWithSegmentsDTO? lastPlay = null;
 
             int currentPlayId = game.Plays.SingleOrDefault(p => !game.Plays.Any(gp => gp.PrevPlayId == p.Id))?.Id ?? 0;
             Play? currentPlay = await _playRepository.GetSinglePlayAsync(currentPlayId);
@@ -46,7 +46,7 @@ namespace TheBackfield.Services
             if (currentPlay != null)
             {
                 (down, toGain, fieldPositionStart, nextTeamId) = StatClient.ParseNextFieldPosition(currentPlay, game.HomeTeamId, game.AwayTeamId);
-                lastPlay = new PlayAsSegmentsDTO(currentPlay, await GetPlaySegmentsAsync(currentPlayId));
+                lastPlay = new PlaySubmitWithSegmentsDTO(currentPlay, await GetPlaySegmentsAsync(currentPlayId));
             }
 
             int? clockStart = null;
