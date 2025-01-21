@@ -1,6 +1,7 @@
 ﻿using TheBackfield.DTOs.PlayEntities;
 using TheBackfield.Interfaces;
 using TheBackfield.Models;
+using TheBackfield.Utilities;
 
 namespace TheBackfield.DTOs.GameStream
 {
@@ -8,6 +9,11 @@ namespace TheBackfield.DTOs.GameStream
     {
         private readonly PlaySubmitDTO _playSubmit;
         private List<PlaySegmentDTO> _playSegments;
+        public PlaySubmitWithSegmentsDTO(Play play, List<PlaySegmentDTO> playSegments)
+        {
+            _playSubmit = PlayClient.PlayAsPlaySubmitDTO(play);
+            _playSegments = playSegments ?? [];
+        }
         public PlaySubmitWithSegmentsDTO(PlaySubmitDTO playSubmit, List<PlaySegmentDTO> playSegments)
         {
             _playSubmit = playSubmit;
