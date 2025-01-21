@@ -9,6 +9,7 @@ namespace TheBackfield.Utilities
     {
         public static (int homeTeamScore, int awayTeamScore) ParseScore(Game gameWithPlays)
         {
+            // Retrieve all plays not nullified by penalties with scoring entities
             List<Play> scoringPlays = gameWithPlays.Plays
                 .Where(p => (p.Touchdown != null || p.Safety != null || (p.FieldGoal != null && p.FieldGoal.Good))
                             && !p.Penalties.Any(pe => pe.Enforced == true && pe.NoPlay == true))
@@ -16,35 +17,42 @@ namespace TheBackfield.Utilities
 
             List<int> scores = [];
 
+            // Analyze each play, assigning positive values to home team scores, negative values to away team scores
             foreach (Play play in scoringPlays)
             {
                 if (play.Touchdown != null)
                 {
+                    // Add 6 for touchdowns
                     scores.Add(play.FieldPositionEnd == 50 ? 6 : -6);
+                    // Add 1 for extra points
                     if (play.ExtraPoint != null && play.ExtraPoint.Good)
                     {
                         scores.Add(play.FieldPositionEnd == 50 ? 1 : -1);
                     }
+                    // Add 2 for successful conversions
                     if (play.Conversion != null && play.Conversion.Good)
                     {
                         scores.Add(play.FieldPositionEnd == 50 ? 2 : -2);
                     }
+                    // Add 2 for defense on defensive conversions
                     if ((play.ExtraPoint != null && play.ExtraPoint.DefensiveConversion)
-                        || (play.ExtraPoint != null && play.ExtraPoint.DefensiveConversion))
+                        || (play.Conversion != null && play.Conversion.DefensiveConversion))
                     {
                         scores.Add(play.FieldPositionEnd == 50 ? -2 : 2);
                     }
                 }
                 else if (play.FieldGoal != null && play.FieldGoal.Good)
                 {
+                    // Add 3 for field goals
                     scores.Add(play.FieldPositionEnd == 50 ? 3 : -3);
                 }
                 else if (play.Safety != null)
                 {
+                    // Add 2 for safeties
                     scores.Add(play.FieldPositionEnd == 50 ? 2 : -2);
                 }
             }
-
+            // Add up positive scores for home team score, negative scores (* -1) for away team score, return tuple
             return (scores.Sum(v => v > 0 ? v : 0), scores.Sum(v => v < 0 ? -1 * v : 0));
         }
 

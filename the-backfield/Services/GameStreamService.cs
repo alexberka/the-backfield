@@ -736,7 +736,7 @@ namespace TheBackfield.Services
                 if ((play.ExtraPoint?.DefensiveConversion ?? false) || (play.Conversion?.DefensiveConversion ?? false))
                 {
                     Player? returner = play.ExtraPoint?.Returner != null ? play.ExtraPoint.Returner : play.Conversion?.Returner;
-                    segment.SegmentText += $" Returned by {(returner != null ? returner : teamsInv[segment.TeamId])} for defensive conversion.";
+                    segment.SegmentText += $" Returned by {(returner != null ? returner.Name() : teamsInv[segment.TeamId])} for defensive conversion.";
                 }
             }
 
