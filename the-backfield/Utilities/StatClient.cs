@@ -137,8 +137,10 @@ namespace TheBackfield.Utilities
             }
             else
             {
-                // If the play was a kickoff or punt, possession changes
-                if (play.Kickoff != null || (play.Punt != null && !play.Punt.Fake))
+                // If the play was a kickoff or punt or missed field goal, possession changes
+                if (play.Kickoff != null
+                    || (play.Punt != null && !play.Punt.Fake)
+                    || (play.FieldGoal != null && !play.FieldGoal.Fake && !play.FieldGoal.Good))
                 {
                     teamId = teamId == homeTeamId ? awayTeamId : homeTeamId;
                 }

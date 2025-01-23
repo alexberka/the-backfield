@@ -926,9 +926,17 @@ namespace TheBackfield.Services
 
             if (hasPossession.Count == 0)
             {
-                if (playSubmit.FieldGoal && playSubmit.KickGood)
+                if (playSubmit.FieldGoal)
                 {
-                    return (playSubmit.TeamId, false);
+                    if (playSubmit.KickGood)
+                    {
+                        return (playSubmit.TeamId, false);
+                    }
+                    // If it was not a good kick, not a blocked kick, and not a faked kick, turnover to other team
+                    else if (!playSubmit.KickGood && !playSubmit.KickBlocked && !playSubmit.KickFake)
+                    {
+                        return (playSubmit.TeamId == homeTeamId ? awayTeamId : homeTeamId, false);
+                    }
                 }
                 FumbleSubmitDTO? notRecovered = playSubmit.Fumbles.SingleOrDefault(f => f.FumbleRecoveredById == null);
                 if (notRecovered != null)
