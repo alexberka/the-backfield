@@ -177,7 +177,7 @@ namespace TheBackfield.Utilities
             // Create Safety
             if (playSubmit.Safety)
             {
-                Safety newSafety = new()
+                newPlay.Safety = new()
                 {
                     PlayId = newPlay.Id,
                     CedingPlayerId = playSubmit.CedingPlayerId

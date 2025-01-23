@@ -138,6 +138,8 @@ namespace TheBackfield.Utilities
             else
             {
                 // If the play was a kickoff or punt or missed field goal, possession changes
+                // This change may be undone by a fumble or blocked kick, which is why this code block exists
+                // inside this else statement and not as a separate else if
                 if (play.Kickoff != null
                     || (play.Punt != null && !play.Punt.Fake)
                     || (play.FieldGoal != null && !play.FieldGoal.Fake && !play.FieldGoal.Good))
