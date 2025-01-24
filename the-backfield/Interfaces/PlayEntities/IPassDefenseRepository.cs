@@ -6,5 +6,6 @@ public interface IPassDefenseRepository
 {
     Task<PassDefense?> CreatePassDefenseAsync(int playId, int defenderId);
     Task<PassDefense?> CreatePassDefenseAsync(PassDefense newPassDefense);
-    Task<bool> DeletePassDefenseAsync(int passDefenseId);
+    Task<PassDefense?> UpdatePassDefenseAsync(PassDefense passDefenseUpdate);
+    Task<string?> DeletePassDefenseAsync(int passDefenseId);
 }

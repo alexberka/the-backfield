@@ -8,6 +8,6 @@ public interface IInterceptionRepository
     Task<Interception?> GetSingleInterceptionAsync(int interceptionId);
     Task<Interception?> CreateInterceptionAsync(PlaySubmitDTO playSubmit);
     Task<Interception?> CreateInterceptionAsync(Interception newInterception);
-    Task<Interception?> UpdateInterceptionAsync(PlaySubmitDTO playSubmit);
-    Task<bool> DeleteInterceptionAsync(int interceptionId);
+    Task<Interception?> UpdateInterceptionAsync(Interception interceptionUpdate);
+    Task<string?> DeleteInterceptionAsync(int interceptionId);
 }

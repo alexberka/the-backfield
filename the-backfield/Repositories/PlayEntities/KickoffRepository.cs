@@ -55,6 +55,7 @@ public class KickoffRepository : IKickoffRepository
 
         return newKickoff;
     }
+
     public async Task<Kickoff?> CreateKickoffAsync(Kickoff newKickoff)
     {
         Play? play = await _dbContext.Plays.FindAsync(newKickoff.PlayId);
@@ -87,18 +88,61 @@ public class KickoffRepository : IKickoffRepository
         return newKickoff;
     }
 
-    public Task<bool> DeleteKickoffAsync(int kickoffId)
+    public async Task<Kickoff?> UpdateKickoffAsync(Kickoff kickoffUpdate)
     {
-        throw new NotImplementedException();
+        Kickoff? kickoff = await _dbContext.Kickoffs.FindAsync(kickoffUpdate.Id);
+        if (kickoff == null)
+        {
+            return null;
+        }
+
+        if (kickoffUpdate.KickerId != null)
+        {
+            Player? kicker = await _dbContext.Players.FindAsync(kickoffUpdate.KickerId);
+            if (kicker == null)
+            {
+                return null;
+            }
+        }
+
+        if (kickoffUpdate.ReturnerId != null)
+        {
+            Player? returner = await _dbContext.Players.FindAsync(kickoffUpdate.ReturnerId);
+            if (returner == null)
+            {
+                return null;
+            }
+        }
+
+        kickoff.KickerId = kickoffUpdate.KickerId;
+        kickoff.TeamId = kickoffUpdate.TeamId;
+        kickoff.ReturnerId = kickoffUpdate.ReturnerId;
+        kickoff.ReturnTeamId = kickoffUpdate.ReturnTeamId;
+        kickoff.FieldedAt = kickoffUpdate.FieldedAt;
+        kickoff.Touchback = kickoffUpdate.Touchback;
+        kickoff.Distance = kickoffUpdate.Distance;
+        kickoff.ReturnYardage = kickoffUpdate.ReturnYardage;
+
+        await _dbContext.SaveChangesAsync();
+
+        return kickoff;
+    }
+
+    public async Task<string?> DeleteKickoffAsync(int kickoffId)
+    {
+        Kickoff? kickoff = await _dbContext.Kickoffs.FindAsync(kickoffId);
+        if (kickoff == null)
+        {
+            return "Invalid kickoff id";
+        }
+
+        _dbContext.Kickoffs.Remove(kickoff);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<Kickoff?> GetSingleKickoffAsync(int kickoffId)
     {
         return await _dbContext.Kickoffs.AsNoTracking().SingleOrDefaultAsync(k => k.Id == kickoffId);
-    }
-
-    public Task<Kickoff?> UpdateKickoffAsync(PlaySubmitDTO playSubmit)
-    {
-        throw new NotImplementedException();
     }
 }

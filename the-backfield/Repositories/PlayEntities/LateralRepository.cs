@@ -52,6 +52,7 @@ public class LateralRepository : ILateralRepository
 
         return newLateral;
     }
+
     public async Task<Lateral?> CreateLateralAsync(Lateral newLateral)
     {
         Play? play = await _dbContext.Plays
@@ -80,18 +81,61 @@ public class LateralRepository : ILateralRepository
         return newLateral;
     }
 
-    public Task<bool> DeleteLateralAsync(int lateralId)
+    public async Task<Lateral?> UpdateLateralAsync(Lateral lateralUpdate)
     {
-        throw new NotImplementedException();
+        Lateral? lateral = await _dbContext.Laterals.SingleOrDefaultAsync(p => p.Id == lateralUpdate.Id);
+
+        if (lateral == null)
+        {
+            return null;
+        }
+
+        if (lateralUpdate.PrevCarrier != null)
+        {
+            Player? prevCarrier = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == lateralUpdate.PrevCarrierId);
+            if (prevCarrier == null)
+            {
+                return null;
+            }
+        }
+
+        if (lateralUpdate.NewCarrier != null)
+        {
+            Player? newCarrier = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == lateralUpdate.NewCarrierId);
+            if (newCarrier == null)
+            {
+                return null;
+            }
+        }
+
+        lateral.PrevCarrierId = lateralUpdate.PrevCarrierId;
+        lateral.NewCarrierId = lateralUpdate.NewCarrierId;
+        lateral.TeamId = lateralUpdate.TeamId;
+        lateral.PossessionAt = lateralUpdate.PossessionAt;
+        lateral.CarriedTo = lateralUpdate.CarriedTo;
+        lateral.Yardage = lateralUpdate.Yardage;
+        lateral.YardageType = lateralUpdate.YardageType;
+
+        await _dbContext.SaveChangesAsync();
+
+        return lateral;
+    }
+
+    public async Task<string?> DeleteLateralAsync(int lateralId)
+    {
+        Lateral? lateral = await _dbContext.Laterals.FindAsync(lateralId);
+        if (lateral == null)
+        {
+            return "Invalid lateral id";
+        }
+
+        _dbContext.Laterals.Remove(lateral);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<Lateral?> GetSingleLateralAsync(int lateralId)
     {
         return await _dbContext.Laterals.AsNoTracking().SingleOrDefaultAsync(l => l.Id == lateralId);
-    }
-
-    public Task<Lateral?> UpdateLateralAsync(LateralSubmitDTO lateralSubmit)
-    {
-        throw new NotImplementedException();
     }
 }

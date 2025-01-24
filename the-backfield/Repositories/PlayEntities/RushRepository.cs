@@ -45,6 +45,7 @@ public class RushRepository : IRushRepository
 
         return newRush;
     }
+
     public async Task<Rush?> CreateRushAsync(Rush newRush)
     {
         Play? play = await _dbContext.Plays
@@ -67,18 +68,47 @@ public class RushRepository : IRushRepository
         return newRush;
     }
 
-    public Task<bool> DeleteRushAsync(int rushId)
+    public async Task<Rush?> UpdateRushAsync(Rush rushUpdate)
     {
-        throw new NotImplementedException();
+        Rush? rush = await _dbContext.Rushes.SingleOrDefaultAsync(p => p.Id == rushUpdate.Id);
+        if (rush == null)
+        {
+            return null;
+        }
+
+        if (rushUpdate.RusherId != null)
+        {
+            Player? rusher = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == rushUpdate.RusherId);
+            if (rusher == null)
+            {
+                return null;
+            }
+        }
+
+        rush.RusherId = rushUpdate.RusherId;
+        rush.TeamId = rushUpdate.TeamId;
+        rush.Yardage = rushUpdate.Yardage;
+
+        await _dbContext.SaveChangesAsync();
+
+        return rush;
+    }
+
+    public async Task<string?> DeleteRushAsync(int rushId)
+    {
+        Rush? rush = await _dbContext.Rushes.FindAsync(rushId);
+        if (rush == null)
+        {
+            return "Invalid rush id";
+        }
+
+        _dbContext.Rushes.Remove(rush);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<Rush?> GetSingleRushAsync(int rushId)
     {
         return await _dbContext.Rushes.FindAsync(rushId);
-    }
-
-    public Task<Rush?> UpdateRushAsync(PlaySubmitDTO playSubmit)
-    {
-        throw new NotImplementedException();
     }
 }

@@ -65,8 +65,41 @@ public class TackleRepository : ITackleRepository
         return newTackle;
     }
 
-    public Task<bool> DeleteTackleAsync(int tackleId)
+    public async Task<Tackle?> UpdateTackleAsync(Tackle tackleUpdate)
     {
-        throw new NotImplementedException();
+        Tackle? tackle = await _dbContext.Tackles.SingleOrDefaultAsync(p => p.Id == tackleUpdate.Id);
+        if (tackle == null)
+        {
+            return null;
+        }
+
+        if (tackle.TacklerId != null)
+        {
+            Player? tackler = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == tackleUpdate.TacklerId);
+            if (tackler == null)
+            {
+                return null;
+            }
+        }
+
+        tackle.TacklerId = tackleUpdate.TacklerId;
+        tackle.TeamId = tackleUpdate.TeamId;
+
+        await _dbContext.SaveChangesAsync();
+
+        return tackle;
+    }
+
+    public async Task<string?> DeleteTackleAsync(int tackleId)
+    {
+        Tackle? tackle = await _dbContext.Tackles.FindAsync(tackleId);
+        if (tackle == null)
+        {
+            return "Invalid tackle id";
+        }
+
+        _dbContext.Tackles.Remove(tackle);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 }

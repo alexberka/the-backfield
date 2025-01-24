@@ -69,18 +69,49 @@ public class FieldGoalRepository : IFieldGoalRepository
         return newFieldGoal;
     }
 
-    public Task<bool> DeleteFieldGoalAsync(int fieldGoalId)
+    public async Task<FieldGoal?> UpdateFieldGoalAsync(FieldGoal fieldGoalUpdate)
     {
-        throw new NotImplementedException();
+        FieldGoal? fieldGoal = await _dbContext.FieldGoals.FindAsync(fieldGoalUpdate.Id);
+        if (fieldGoal == null)
+        {
+            return null;
+        }
+
+        if (fieldGoalUpdate.KickerId != null)
+        {
+            Player? kicker = await _dbContext.Players.FindAsync(fieldGoalUpdate.KickerId);
+            if (kicker == null)
+            {
+                return null;
+            }
+        }
+
+        fieldGoal.KickerId = fieldGoalUpdate.KickerId;
+        fieldGoal.TeamId = fieldGoalUpdate.TeamId;
+        fieldGoal.Good = fieldGoalUpdate.Good;
+        fieldGoal.Fake = fieldGoalUpdate.Fake;
+        fieldGoal.Distance = fieldGoalUpdate.Distance;
+
+        await _dbContext.SaveChangesAsync();
+
+        return fieldGoal;
+    }
+
+    public async Task<string?> DeleteFieldGoalAsync(int fieldGoalId)
+    {
+        FieldGoal? fieldGoal = await _dbContext.FieldGoals.FindAsync(fieldGoalId);
+        if (fieldGoal == null)
+        {
+            return "Invalid field goal id";
+        }
+
+        _dbContext.FieldGoals.Remove(fieldGoal);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<FieldGoal?> GetSingleFieldGoalAsync(int fieldGoalId)
     {
         return await _dbContext.FieldGoals.AsNoTracking().SingleOrDefaultAsync(fg => fg.Id == fieldGoalId);
-    }
-
-    public Task<FieldGoal?> UpdateFieldGoalAsync(PlaySubmitDTO playSubmit)
-    {
-        throw new NotImplementedException();
     }
 }

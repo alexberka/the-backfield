@@ -8,6 +8,6 @@ public interface IFieldGoalRepository
     Task<FieldGoal?> GetSingleFieldGoalAsync(int fieldGoalId);
     Task<FieldGoal?> CreateFieldGoalAsync(PlaySubmitDTO playSubmit);
     Task<FieldGoal?> CreateFieldGoalAsync(FieldGoal newFieldGoal);
-    Task<FieldGoal?> UpdateFieldGoalAsync(PlaySubmitDTO playSubmit);
-    Task<bool> DeleteFieldGoalAsync(int fieldGoalId);
+    Task<FieldGoal?> UpdateFieldGoalAsync(FieldGoal fieldGoalUpdate);
+    Task<string?> DeleteFieldGoalAsync(int fieldGoalId);
 }

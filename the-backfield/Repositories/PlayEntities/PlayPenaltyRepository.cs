@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using TheBackfield.Data;
 using TheBackfield.DTOs.PlayEntities;
@@ -60,6 +61,7 @@ public class PlayPenaltyRepository : IPlayPenaltyRepository
 
         return newPlayPenalty;
     }
+
     public async Task<PlayPenalty?> CreatePlayPenaltyAsync(PlayPenalty newPlayPenalty)
     {
         Play? play = await _dbContext.Plays
@@ -91,19 +93,59 @@ public class PlayPenaltyRepository : IPlayPenaltyRepository
 
         return newPlayPenalty;
     }
-
-    public Task<bool> DeletePlayPenaltyAsync(int playPenaltyId)
+    public async Task<PlayPenalty?> UpdatePlayPenaltyAsync(PlayPenalty playPenaltyUpdate)
     {
-        throw new NotImplementedException();
+        PlayPenalty? playPenalty = await _dbContext.PlayPenalties.SingleOrDefaultAsync(p => p.Id == playPenaltyUpdate.Id);
+        if (playPenalty == null)
+        {
+            return null;
+        }
+
+        Penalty? penalty = await _dbContext.Penalties.FindAsync(playPenalty.PenaltyId);
+        if (penalty == null)
+        {
+            return null;
+        }
+
+        if (playPenaltyUpdate.PlayerId != null)
+        {
+            Player? player = await _dbContext.Players.FindAsync(playPenaltyUpdate.PlayerId);
+            if (player == null)
+            {
+                return null;
+            }
+        }
+
+        playPenalty.PenaltyId = playPenaltyUpdate.PenaltyId;
+        playPenalty.PlayerId = playPenaltyUpdate.PlayerId;
+        playPenalty.TeamId = playPenaltyUpdate.TeamId;
+        playPenalty.Enforced = playPenaltyUpdate.Enforced;
+        playPenalty.EnforcedFrom = playPenaltyUpdate.EnforcedFrom;
+        playPenalty.NoPlay = playPenaltyUpdate.NoPlay;
+        playPenalty.LossOfDown = playPenaltyUpdate.LossOfDown;
+        playPenalty.AutoFirstDown = playPenaltyUpdate.AutoFirstDown;
+        playPenalty.Yardage = playPenaltyUpdate.Yardage;
+
+        await _dbContext.SaveChangesAsync();
+
+        return playPenalty;
+    }
+
+    public async Task<string?> DeletePlayPenaltyAsync(int playPenaltyId)
+    {
+        PlayPenalty? playPenalty = await _dbContext.PlayPenalties.FindAsync(playPenaltyId);
+        if (playPenalty == null)
+        {
+            return "Invalid play penalty id";
+        }
+
+        _dbContext.PlayPenalties.Remove(playPenalty);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<PlayPenalty?> GetSinglePlayPenaltyAsync(int playPenaltyId)
     {
         return await _dbContext.PlayPenalties.AsNoTracking().SingleOrDefaultAsync(pp => pp.Id == playPenaltyId);
-    }
-
-    public Task<PlayPenalty?> UpdatePlayPenaltyAsync(PlayPenaltySubmitDTO playPenaltySubmit)
-    {
-        throw new NotImplementedException();
     }
 }

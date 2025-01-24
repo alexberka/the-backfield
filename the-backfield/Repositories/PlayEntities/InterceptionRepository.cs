@@ -44,6 +44,7 @@ public class InterceptionRepository : IInterceptionRepository
 
         return newInterception;
     }
+
     public async Task<Interception?> CreateInterceptionAsync(Interception newInterception)
     {
         Play? play = await _dbContext.Plays.FindAsync(newInterception.PlayId);
@@ -67,18 +68,48 @@ public class InterceptionRepository : IInterceptionRepository
         return newInterception;
     }
 
-    public Task<bool> DeleteInterceptionAsync(int interceptionId)
+    public async Task<Interception?> UpdateInterceptionAsync(Interception interceptionUpdate)
     {
-        throw new NotImplementedException();
+        Interception? interception = await _dbContext.Interceptions.FindAsync(interceptionUpdate.Id);
+        if (interception == null)
+        {
+            return null;
+        }
+
+        if (interceptionUpdate.InterceptedById != null)
+        {
+            Player? defender = await _dbContext.Players.FindAsync(interceptionUpdate.InterceptedById);
+            if (defender == null)
+            {
+                return null;
+            }
+        }
+
+        interception.InterceptedById = interceptionUpdate.InterceptedById;
+        interception.TeamId = interceptionUpdate.TeamId;
+        interception.InterceptedAt = interceptionUpdate.InterceptedAt;
+        interception.ReturnYardage = interceptionUpdate.ReturnYardage;
+
+        await _dbContext.SaveChangesAsync();
+
+        return interception;
+    }
+
+    public async Task<string?> DeleteInterceptionAsync(int interceptionId)
+    {
+        Interception? interception = await _dbContext.Interceptions.FindAsync(interceptionId);
+        if (interception == null)
+        {
+            return "Invalid interception id";
+        }
+
+        _dbContext.Interceptions.Remove(interception);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<Interception?> GetSingleInterceptionAsync(int interceptionId)
     {
         return await _dbContext.Interceptions.AsNoTracking().SingleOrDefaultAsync(i => i.Id == interceptionId);
-    }
-
-    public Task<Interception?> UpdateInterceptionAsync(PlaySubmitDTO playSubmit)
-    {
-        throw new NotImplementedException();
     }
 }

@@ -1,6 +1,4 @@
-using System.Net.Sockets;
 using Microsoft.EntityFrameworkCore;
-using the_backfield.Migrations;
 using TheBackfield.Data;
 using TheBackfield.DTOs;
 using TheBackfield.Interfaces.PlayEntities;
@@ -58,6 +56,7 @@ public class PassRepository : IPassRepository
 
         return newPass;
     }
+
     public async Task<Pass?> CreatePassAsync(Pass newPass)
     {
         Play? play = await _dbContext.Plays
@@ -90,18 +89,62 @@ public class PassRepository : IPassRepository
         return newPass;
     }
 
-    public Task<bool> DeletePassAsync(int passId)
+    public async Task<Pass?> UpdatePassAsync(Pass passUpdate)
     {
-        throw new NotImplementedException();
+        Pass? pass = await _dbContext.Passes.SingleOrDefaultAsync(p => p.Id == passUpdate.Id);
+
+        if (pass == null)
+        {
+            return null;
+        }
+
+        if (passUpdate.PasserId != null)
+        {
+            Player? passer = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == passUpdate.PasserId);
+            if (passer == null)
+            {
+                return null;
+            }
+        }
+
+        if (passUpdate.ReceiverId != null)
+        {
+            Player? receiver = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == passUpdate.ReceiverId);
+            if (receiver == null)
+            {
+                return null;
+            }
+        }
+
+        pass.PasserId = passUpdate.PasserId;
+        pass.ReceiverId = passUpdate.ReceiverId;
+        pass.TeamId = passUpdate.TeamId;
+        pass.Completion = passUpdate.Completion;
+        pass.PassYardage = passUpdate.PassYardage;
+        pass.ReceptionYardage = passUpdate.ReceptionYardage;
+        pass.Sack = passUpdate.Sack;
+        pass.Spike = passUpdate.Spike;
+
+        await _dbContext.SaveChangesAsync();
+
+        return pass;
+    }
+
+    public async Task<string?> DeletePassAsync(int passId)
+    {
+        Pass? pass = await _dbContext.Passes.FindAsync(passId);
+        if (pass == null)
+        {
+            return "Invalid pass id";
+        }
+
+        _dbContext.Passes.Remove(pass);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<Pass?> GetSinglePassAsync(int passId)
     {
         return await _dbContext.Passes.FindAsync(passId);
-    }
-
-    public Task<Pass?> UpdatePassAsync(PlaySubmitDTO playSubmit)
-    {
-        throw new NotImplementedException();
     }
 }

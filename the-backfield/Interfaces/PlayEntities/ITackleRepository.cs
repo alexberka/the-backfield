@@ -6,5 +6,6 @@ public interface ITackleRepository
 {
     Task<Tackle?> CreateTackleAsync(int playId, int tacklerId);
     Task<Tackle?> CreateTackleAsync(Tackle newTackle);
-    Task<bool> DeleteTackleAsync(int tackleId);
+    Task<Tackle?> UpdateTackleAsync(Tackle tackleUpdate);
+    Task<string?> DeleteTackleAsync(int tackleId);
 }

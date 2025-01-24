@@ -120,18 +120,76 @@ public class ConversionRepository : IConversionRepository
         return newConversion;
     }
 
-    public Task<bool> DeleteConversionAsync(int conversionId)
+    public async Task<Conversion?> UpdateConversionAsync(Conversion conversionUpdate)
     {
-        throw new NotImplementedException();
+        Conversion? conversion = await _dbContext.Conversions.FindAsync(conversionUpdate.Id);
+        if (conversion == null)
+        {
+            return null;
+        }
+
+        if (conversionUpdate.PasserId != null)
+        {
+            Player? passer = await _dbContext.Players.FindAsync(conversionUpdate.PasserId);
+            if (passer == null)
+            {
+                return null;
+            }
+        }
+        if (conversionUpdate.ReceiverId != null)
+        {
+            Player? receiver = await _dbContext.Players.FindAsync(conversionUpdate.ReceiverId);
+            if (receiver == null)
+            {
+                return null;
+            }
+        }
+        if (conversionUpdate.RusherId != null)
+        {
+            Player? rusher = await _dbContext.Players.FindAsync(conversionUpdate.RusherId);
+            if (rusher == null)
+            {
+                return null;
+            }
+        }
+        if (conversionUpdate.ReturnerId != null)
+        {
+            Player? returner = await _dbContext.Players.FindAsync(conversionUpdate.ReturnerId);
+            if (returner == null)
+            {
+                return null;
+            }
+        }
+
+        conversion.PasserId = conversionUpdate.PasserId;
+        conversion.ReceiverId = conversionUpdate.ReceiverId;
+        conversion.RusherId = conversionUpdate.RusherId;
+        conversion.TeamId = conversionUpdate.TeamId;
+        conversion.Good = conversionUpdate.Good;
+        conversion.DefensiveConversion = conversionUpdate.DefensiveConversion;
+        conversion.ReturnerId = conversionUpdate.ReturnerId;
+        conversion.ReturnTeamId = conversionUpdate.ReturnTeamId;
+
+        await _dbContext.SaveChangesAsync();
+
+        return conversion;
+    }
+
+    public async Task<string?> DeleteConversionAsync(int conversionId)
+    {
+        Conversion? conversion = await _dbContext.Conversions.FindAsync(conversionId);
+        if (conversion == null)
+        {
+            return "Invalid conversion id";
+        }
+
+        _dbContext.Conversions.Remove(conversion);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<Conversion?> GetSingleConversionAsync(int conversionId)
     {
         return await _dbContext.Conversions.AsNoTracking().SingleOrDefaultAsync(c => c.Id == conversionId);
-    }
-
-    public Task<Conversion?> UpdateConversionAsync(PlaySubmitDTO playSubmit)
-    {
-        throw new NotImplementedException();
     }
 }
