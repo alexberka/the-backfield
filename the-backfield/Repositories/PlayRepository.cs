@@ -56,6 +56,13 @@ namespace TheBackfield.Repositories
                 return null;
             }
 
+            Team? team = await _dbContext.Teams.AsNoTracking().SingleOrDefaultAsync(t => t.Id == playUpdate.TeamId);
+            if (team == null)
+            {
+                return null;
+            }
+
+            play.TeamId = playUpdate.TeamId;
             play.FieldPositionStart = playUpdate.FieldPositionStart;
             play.FieldPositionEnd = playUpdate.FieldPositionEnd;
             play.Down = playUpdate.Down;
