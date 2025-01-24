@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 using TheBackfield.Data;
 using TheBackfield.DTOs.PlayEntities;
 using TheBackfield.Interfaces.PlayEntities;
@@ -67,6 +68,7 @@ public class FumbleRepository : IFumbleRepository
 
         return newFumble;
     }
+
     public async Task<Fumble?> CreateFumbleAsync(Fumble newFumble)
     {
         Play? play = await _dbContext.Plays
@@ -108,18 +110,71 @@ public class FumbleRepository : IFumbleRepository
         return newFumble;
     }
 
-    public Task<bool> DeleteFumbleAsync(int fumbleId)
+    public async Task<Fumble?> UpdateFumbleAsync(Fumble fumbleUpdate)
     {
-        throw new NotImplementedException();
+        Fumble? fumble = await _dbContext.Fumbles.SingleOrDefaultAsync(p => p.Id == fumbleUpdate.Id);
+        if (fumble == null)
+        {
+            return null;
+        }
+
+        if (fumbleUpdate.FumbleCommittedById != null)
+        {
+            Player? fumbler = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == fumbleUpdate.FumbleCommittedById);
+            if (fumbler == null)
+            {
+                return null;
+            }
+        }
+        if (fumbleUpdate.FumbleForcedById != null)
+        {
+            Player? forcedBy = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == fumbleUpdate.FumbleForcedById);
+            if (forcedBy == null)
+            {
+                return null;
+            }
+        }
+        if (fumbleUpdate.FumbleRecoveredById != null)
+        {
+            Player? recoveredBy = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == fumbleUpdate.FumbleRecoveredById);
+            if (recoveredBy == null)
+            {
+                return null;
+            }
+        }
+
+        fumble.FumbleCommittedById = fumbleUpdate.FumbleCommittedById;
+        fumble.FumbleCommittedByTeamId = fumbleUpdate.FumbleCommittedByTeamId;
+        fumble.FumbledAt = fumbleUpdate.FumbledAt;
+        fumble.FumbleForcedById = fumbleUpdate.FumbleForcedById;
+        fumble.FumbleForcedByTeamId = fumbleUpdate.FumbleForcedByTeamId;
+        fumble.FumbleRecoveredById = fumbleUpdate.FumbleRecoveredById;
+        fumble.FumbleRecoveredByTeamId = fumbleUpdate.FumbleRecoveredByTeamId;
+        fumble.RecoveredAt = fumbleUpdate.RecoveredAt;
+        fumble.LooseBallYardage = fumbleUpdate.LooseBallYardage;
+        fumble.ReturnYardage = fumbleUpdate.ReturnYardage;
+        fumble.YardageType = fumbleUpdate.YardageType;
+
+        await _dbContext.SaveChangesAsync();
+
+        return fumble;
+    }
+
+    public async Task<string?> DeleteFumbleAsync(int fumbleId)
+    {
+        Fumble? fumble = await _dbContext.Fumbles.FindAsync(fumbleId);
+        if (fumble == null)
+        {
+            return "Invalid fumble id";
+        }
+
+        _dbContext.Fumbles.Remove(fumble);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<Fumble?> GetSingleFumbleAsync(int fumbleId)
     {
         return await _dbContext.Fumbles.AsNoTracking().SingleOrDefaultAsync(f => f.Id == fumbleId);
-    }
-
-    public Task<Fumble?> UpdateFumbleAsync(FumbleSubmitDTO fumbleSubmit)
-    {
-        throw new NotImplementedException();
     }
 }

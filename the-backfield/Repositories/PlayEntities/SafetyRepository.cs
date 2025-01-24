@@ -72,19 +72,47 @@ namespace TheBackfield.Repositories.PlayEntities
             return newSafety;
         }
 
-        public Task<bool> DeleteSafetyAsync(int safetyId)
+        public async Task<Safety?> UpdateSafetyAsync(Safety safetyUpdate)
         {
-            throw new NotImplementedException();
+            Safety? safety = await _dbContext.Safeties.SingleOrDefaultAsync(p => p.Id == safetyUpdate.Id);
+            if (safety == null)
+            {
+                return null;
+            }
+
+            if (safetyUpdate.CedingPlayerId != null)
+            {
+                Player? ceding = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == safetyUpdate.CedingPlayerId);
+                if (ceding == null)
+                {
+                    return null;
+                }
+            }
+
+            safety.CedingPlayerId = safetyUpdate.CedingPlayerId;
+            safety.CedingTeamId = safetyUpdate.CedingTeamId;
+
+            await _dbContext.SaveChangesAsync();
+
+            return safety;
+        }
+
+        public async Task<string?> DeleteSafetyAsync(int safetyId)
+        {
+            Safety? safety = await _dbContext.Safeties.FindAsync(safetyId);
+            if (safety == null)
+            {
+                return "Invalid safety id";
+            }
+
+            _dbContext.Safeties.Remove(safety);
+            await _dbContext.SaveChangesAsync();
+            return null;
         }
 
         public async Task<Safety?> GetSingleSafetyAsync(int safetyId)
         {
             return await _dbContext.Safeties.AsNoTracking().SingleOrDefaultAsync(s => s.Id == safetyId);
-        }
-
-        public Task<Safety?> UpdateSafetyAsync(PlaySubmitDTO playSubmit)
-        {
-            throw new NotImplementedException();
         }
     }
 }

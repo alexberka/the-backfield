@@ -54,6 +54,7 @@ public class ExtraPointRepository : IExtraPointRepository
 
         return newExtraPoint;
     }
+
     public async Task<ExtraPoint?> CreateExtraPointAsync(ExtraPoint newExtraPoint)
     {
         Play? play = await _dbContext.Plays.FindAsync(newExtraPoint.PlayId);
@@ -85,18 +86,59 @@ public class ExtraPointRepository : IExtraPointRepository
         return newExtraPoint;
     }
 
-    public Task<bool> DeleteExtraPointAsync(int extraPointId)
+    public async Task<ExtraPoint?> UpdateExtraPointAsync(ExtraPoint extraPointUpdate)
     {
-        throw new NotImplementedException();
+        ExtraPoint? extraPoint = await _dbContext.ExtraPoints.FindAsync(extraPointUpdate.Id);
+        if (extraPoint == null)
+        {
+            return null;
+        }
+
+        if (extraPointUpdate.KickerId != null)
+        {
+            Player? kicker = await _dbContext.Players.FindAsync(extraPointUpdate.KickerId);
+            if (kicker == null)
+            {
+                return null;
+            }
+        }
+        if (extraPointUpdate.ReturnerId != null)
+        {
+            Player? returner = await _dbContext.Players.FindAsync(extraPointUpdate.ReturnerId);
+            if (returner == null)
+            {
+                return null;
+            }
+        }
+
+        extraPoint.KickerId = extraPointUpdate.KickerId;
+        extraPoint.TeamId = extraPointUpdate.TeamId;
+        extraPoint.Good = extraPointUpdate.Good;
+        extraPoint.Fake = extraPointUpdate.Fake;
+        extraPoint.DefensiveConversion = extraPointUpdate.DefensiveConversion;
+        extraPoint.ReturnerId = extraPointUpdate.ReturnerId;
+        extraPoint.ReturnTeamId = extraPointUpdate.ReturnTeamId;
+
+        await _dbContext.SaveChangesAsync();
+
+        return extraPoint;
+    }
+
+    public async Task<string?> DeleteExtraPointAsync(int extraPointId)
+    {
+        ExtraPoint? extraPoint = await _dbContext.ExtraPoints.FindAsync(extraPointId);
+        if (extraPoint == null)
+        {
+            return "Invalid extra point id";
+        }
+
+        _dbContext.ExtraPoints.Remove(extraPoint);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<ExtraPoint?> GetSingleExtraPointAsync(int extraPointId)
     {
         return await _dbContext.ExtraPoints.AsNoTracking().SingleOrDefaultAsync(c => c.Id == extraPointId);
-    }
-
-    public Task<ExtraPoint?> UpdateExtraPointAsync(PlaySubmitDTO playSubmit)
-    {
-        throw new NotImplementedException();
     }
 }

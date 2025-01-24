@@ -71,9 +71,17 @@ namespace TheBackfield.Repositories.PlayEntities
             return newTouchdown;
         }
 
-        public Task<bool> DeleteTouchdownAsync(int touchdownId)
+        public async Task<string?> DeleteTouchdownAsync(int touchdownId)
         {
-            throw new NotImplementedException();
+            Touchdown? touchdown = await _dbContext.Touchdowns.FindAsync(touchdownId);
+            if (touchdown == null)
+            {
+                return "Invalid touchdown id";
+            }
+
+            _dbContext.Touchdowns.Remove(touchdown);
+            await _dbContext.SaveChangesAsync();
+            return null;
         }
 
         public async Task<Touchdown?> GetSingleTouchdownAsync(int touchdownId)
@@ -81,9 +89,29 @@ namespace TheBackfield.Repositories.PlayEntities
             return await _dbContext.Touchdowns.AsNoTracking().SingleOrDefaultAsync(t => t.Id == touchdownId);
         }
 
-        public Task<Touchdown?> UpdateTouchdownAsync(PlaySubmitDTO playSubmit)
+        public async Task<Touchdown?> UpdateTouchdownAsync(Touchdown touchdownUpdate)
         {
-            throw new NotImplementedException();
+            Touchdown? touchdown = await _dbContext.Touchdowns.SingleOrDefaultAsync(t => t.Id == touchdownUpdate.Id);
+            if (touchdown == null)
+            {
+                return null;
+            }
+
+            if (touchdownUpdate.PlayerId != null)
+            {
+                Player? player = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == touchdownUpdate.PlayerId);
+                if (player == null)
+                {
+                    return null;
+                }
+            }
+
+            touchdown.PlayerId = touchdownUpdate.PlayerId;
+            touchdown.TeamId = touchdownUpdate.TeamId;
+
+            await _dbContext.SaveChangesAsync();
+
+            return touchdown;
         }
     }
 }

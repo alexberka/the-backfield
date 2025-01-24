@@ -8,6 +8,6 @@ public interface IKickBlockRepository
     Task<KickBlock?> GetSingleKickBlockAsync(int kickBlockId);
     Task<KickBlock?> CreateKickBlockAsync(PlaySubmitDTO playSubmit);
     Task<KickBlock?> CreateKickBlockAsync(KickBlock newKickBlock);
-    Task<KickBlock?> UpdateKickBlockAsync(PlaySubmitDTO playSubmit);
-    Task<bool> DeleteKickBlockAsync(int kickBlockId);
+    Task<KickBlock?> UpdateKickBlockAsync(KickBlock kickBlockUpdate);
+    Task<string?> DeleteKickBlockAsync(int kickBlockId);
 }

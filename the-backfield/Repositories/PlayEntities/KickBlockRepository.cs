@@ -52,6 +52,7 @@ public class KickBlockRepository : IKickBlockRepository
 
         return newKickBlock;
     }
+
     public async Task<KickBlock?> CreateKickBlockAsync(KickBlock newKickBlock)
     {
         Play? play = await _dbContext.Plays.FindAsync(newKickBlock.PlayId);
@@ -83,18 +84,59 @@ public class KickBlockRepository : IKickBlockRepository
         return newKickBlock;
     }
 
-    public Task<bool> DeleteKickBlockAsync(int kickBlockId)
+    public async Task<KickBlock?> UpdateKickBlockAsync(KickBlock kickBlockUpdate)
     {
-        throw new NotImplementedException();
+        KickBlock? kickBlock = await _dbContext.KickBlocks.FindAsync(kickBlockUpdate.Id);
+        if (kickBlock == null)
+        {
+            return null;
+        }
+
+        if (kickBlockUpdate.BlockedById != null)
+        {
+            Player? blocker = await _dbContext.Players.FindAsync(kickBlockUpdate.BlockedById);
+            if (blocker == null)
+            {
+                return null;
+            }
+        }
+        if (kickBlockUpdate.RecoveredById != null)
+        {
+            Player? recovery = await _dbContext.Players.FindAsync(kickBlockUpdate.RecoveredById);
+            if (recovery == null)
+            {
+                return null;
+            }
+        }
+
+        kickBlock.BlockedById = kickBlockUpdate.BlockedById;
+        kickBlock.BlockedByTeamId = kickBlockUpdate.BlockedByTeamId;
+        kickBlock.RecoveredById = kickBlockUpdate.RecoveredById;
+        kickBlock.RecoveredByTeamId = kickBlockUpdate.RecoveredByTeamId;
+        kickBlock.RecoveredAt = kickBlockUpdate.RecoveredAt;
+        kickBlock.LooseBallYardage = kickBlockUpdate.LooseBallYardage;
+        kickBlock.ReturnYardage = kickBlockUpdate.ReturnYardage;
+
+        await _dbContext.SaveChangesAsync();
+
+        return kickBlock;
+    }
+
+    public async Task<string?> DeleteKickBlockAsync(int kickBlockId)
+    {
+        KickBlock? kickBlock = await _dbContext.KickBlocks.FindAsync(kickBlockId);
+        if (kickBlock == null)
+        {
+            return "Invalid kick block id";
+        }
+
+        _dbContext.KickBlocks.Remove(kickBlock);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<KickBlock?> GetSingleKickBlockAsync(int kickBlockId)
     {
         return await _dbContext.KickBlocks.AsNoTracking().SingleOrDefaultAsync(kb => kb.Id == kickBlockId);
-    }
-
-    public Task<KickBlock?> UpdateKickBlockAsync(PlaySubmitDTO playSubmit)
-    {
-        throw new NotImplementedException();
     }
 }

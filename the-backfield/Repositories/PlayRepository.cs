@@ -48,6 +48,28 @@ namespace TheBackfield.Repositories
             return newPlay;
         }
 
+        public async Task<Play?> UpdatePlayAsync(PlaySubmitDTO playUpdate)
+        {
+            Play? play = await _dbContext.Plays.SingleOrDefaultAsync(p => p.Id == playUpdate.Id);
+            if (play == null)
+            {
+                return null;
+            }
+
+            play.FieldPositionStart = playUpdate.FieldPositionStart;
+            play.FieldPositionEnd = playUpdate.FieldPositionEnd;
+            play.Down = playUpdate.Down;
+            play.ToGain = playUpdate.ToGain;
+            play.ClockStart = playUpdate.ClockStart;
+            play.ClockEnd = playUpdate.ClockEnd;
+            play.GamePeriod = playUpdate.GamePeriod;
+            play.Notes = playUpdate.Notes;
+
+            await _dbContext.SaveChangesAsync();
+
+            return play;
+        }
+
         public async Task<string?> DeletePlayAsync(int playId)
         {
             Play? playToDelete = await _dbContext.Plays.FindAsync(playId);
@@ -168,11 +190,6 @@ namespace TheBackfield.Repositories
                 .Where(p => p.GameId == gameId)
                 .Where(p => Math.Abs(p.FieldPositionEnd ?? 0) == 50 && !p.Penalties.Any(pe => pe.NoPlay == true && pe.Enforced == true))
                 .ToListAsync();
-        }
-
-        public Task<Play?> UpdatePlayAsync(PlaySubmitDTO playSubmit)
-        {
-            throw new NotImplementedException();
         }
 
         public Task<List<Play>> GetCurrentDriveByGameAsync(int gameId)

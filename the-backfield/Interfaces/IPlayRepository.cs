@@ -10,7 +10,7 @@ namespace TheBackfield.Interfaces
         Task<List<Play>> GetCurrentDriveByGameAsync(int gameId);
         Task<Play?> GetLastPlayByGameAsync(int gameId);
         Task<Play?> CreatePlayAsync(PlaySubmitDTO playSubmit);
-        Task<Play?> UpdatePlayAsync(PlaySubmitDTO playSubmit);
+        Task<Play?> UpdatePlayAsync(PlaySubmitDTO playUpdate);
         Task<string?> DeletePlayAsync(int playId);
     }
 }

@@ -44,6 +44,7 @@ public class PassDefenseRepository : IPassDefenseRepository
 
         return newPassDefense;
     }
+
     public async Task<PassDefense?> CreatePassDefenseAsync(PassDefense newPassDefense)
     {
         Play? play = await _dbContext.Plays
@@ -69,8 +70,41 @@ public class PassDefenseRepository : IPassDefenseRepository
         return newPassDefense;
     }
 
-    public Task<bool> DeletePassDefenseAsync(int passDefenseId)
+    public async Task<PassDefense?> UpdatePassDefenseAsync(PassDefense passDefenseUpdate)
     {
-        throw new NotImplementedException();
+        PassDefense? passDefense = await _dbContext.PassDefenses.SingleOrDefaultAsync(p => p.Id == passDefenseUpdate.Id);
+        if (passDefense == null)
+        {
+            return null;
+        }
+
+        if (passDefenseUpdate.DefenderId != null)
+        {
+            Player? defender = await _dbContext.Players.AsNoTracking().SingleOrDefaultAsync(p => p.Id == passDefenseUpdate.DefenderId);
+            if (defender == null)
+            {
+                return null;
+            }
+        }
+
+        passDefense.DefenderId = passDefenseUpdate.DefenderId;
+        passDefense.TeamId = passDefenseUpdate.TeamId;
+
+        await _dbContext.SaveChangesAsync();
+
+        return passDefense;
+    }
+
+    public async Task<string?> DeletePassDefenseAsync(int passDefenseId)
+    {
+        PassDefense? passDefense = await _dbContext.PassDefenses.FindAsync(passDefenseId);
+        if (passDefense == null)
+        {
+            return "Invalid pass defense id";
+        }
+
+        _dbContext.PassDefenses.Remove(passDefense);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 }

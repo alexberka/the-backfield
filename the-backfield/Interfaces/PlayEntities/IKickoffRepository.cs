@@ -8,6 +8,6 @@ public interface IKickoffRepository
     Task<Kickoff?> GetSingleKickoffAsync(int kickoffId);
     Task<Kickoff?> CreateKickoffAsync(PlaySubmitDTO playSubmit);
     Task<Kickoff?> CreateKickoffAsync(Kickoff newKickoff);
-    Task<Kickoff?> UpdateKickoffAsync(PlaySubmitDTO playSubmit);
-    Task<bool> DeleteKickoffAsync(int kickoffId);
+    Task<Kickoff?> UpdateKickoffAsync(Kickoff kickoffUpdate);
+    Task<string?> DeleteKickoffAsync(int kickoffId);
 }

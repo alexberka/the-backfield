@@ -88,18 +88,63 @@ public class PuntRepository : IPuntRepository
         return newPunt;
     }
 
-    public Task<bool> DeletePuntAsync(int puntId)
+    public async Task<Punt?> UpdatePuntAsync(Punt puntUpdate)
     {
-        throw new NotImplementedException();
+        Punt? punt = await _dbContext.Punts.FindAsync(puntUpdate.Id);
+        if (punt == null)
+        {
+            return null;
+        }
+
+        if (puntUpdate.KickerId != null)
+        {
+            Player? kicker = await _dbContext.Players.FindAsync(puntUpdate.KickerId);
+            if (kicker == null)
+            {
+                return null;
+            }
+        }
+
+        if (puntUpdate.ReturnerId != null)
+        {
+            Player? returner = await _dbContext.Players.FindAsync(puntUpdate.ReturnerId);
+            if (returner == null)
+            {
+                return null;
+            }
+        }
+
+        punt.KickerId = puntUpdate.KickerId;
+        punt.TeamId = puntUpdate.TeamId;
+        punt.ReturnerId = puntUpdate.ReturnerId;
+        punt.ReturnTeamId = puntUpdate.ReturnTeamId;
+        punt.FieldedAt = puntUpdate.FieldedAt;
+        punt.FairCatch = puntUpdate.FairCatch;
+        punt.Touchback = puntUpdate.Touchback;
+        punt.Fake = puntUpdate.Fake;
+        punt.Distance = puntUpdate.Distance;
+        punt.ReturnYardage = puntUpdate.ReturnYardage;
+
+        await _dbContext.SaveChangesAsync();
+
+        return punt;
+    }
+
+    public async Task<string?> DeletePuntAsync(int puntId)
+    {
+        Punt? punt = await _dbContext.Punts.FindAsync(puntId);
+        if (punt == null)
+        {
+            return "Invalid punt id";
+        }
+
+        _dbContext.Punts.Remove(punt);
+        await _dbContext.SaveChangesAsync();
+        return null;
     }
 
     public async Task<Punt?> GetSinglePuntAsync(int puntId)
     {
         return await _dbContext.Punts.AsNoTracking().SingleOrDefaultAsync(p => p.Id == puntId);
-    }
-
-    public Task<Punt?> UpdatePuntAsync(PlaySubmitDTO playSubmit)
-    {
-        throw new NotImplementedException();
     }
 }
