@@ -324,6 +324,7 @@ namespace TheBackfield.Services
 
             return new ResponseDTO<Play> { Resource = createdPlay };
         }
+
         public async Task<ResponseDTO<Play>> UpdatePlayAsync(PlaySubmitDTO playSubmit)
         {
             User? user = await _userRepository.GetUserBySessionKeyAsync(playSubmit.SessionKey);
