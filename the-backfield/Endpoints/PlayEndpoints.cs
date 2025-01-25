@@ -40,6 +40,24 @@ public static class PlayEndpoints
             .WithOpenApi()
             .Produces<Play>(StatusCodes.Status201Created);
 
+        group.MapPut("/plays/{playId}", async (IPlayService playService, PlaySubmitDTO playSubmit, int playId) =>
+        {
+            if (playSubmit.Id != playId)
+            {
+                return Results.BadRequest("Id in payload does not match playId in URI");
+            }
+
+            ResponseDTO<Play> response = await playService.UpdatePlayAsync(playSubmit);
+            if (response.Error || response.Resource == null)
+            {
+                return response.ThrowError();
+            }
+
+            return Results.Ok(response.Resource);
+        })
+            .WithOpenApi()
+            .Produces<Play>(StatusCodes.Status201Created);
+
         group.MapDelete("/plays/{playId}", async (IPlayService playService, int playId, string sessionKey) =>
         {
             ResponseDTO<Play> response = await playService.DeletePlayAsync(playId, sessionKey);
