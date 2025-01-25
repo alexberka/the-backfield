@@ -363,7 +363,7 @@ namespace TheBackfield.Services
             queuedPlay = await AddPlayAuxTeamIdsAsync(queuedPlay, game.HomeTeamId, game.AwayTeamId);
 
             // Update Play
-            Play? updatedPlay = await _playRepository.CreatePlayAsync(validatedPlaySubmit);
+            Play? updatedPlay = await _playRepository.UpdatePlayAsync(validatedPlaySubmit);
             if (updatedPlay == null)
             {
                 return new ResponseDTO<Play>();
