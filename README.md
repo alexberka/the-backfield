@@ -1,4 +1,5 @@
 <h1 align="center" style="font-weight: bold;">The Backfield</h1>
+<p>v1.025.0124.1b compatible with UI v1.025.0129.1 or later</p>
 
 <p align="center">
 <a href="#tech">Technologies</a>
@@ -8,21 +9,21 @@
 </p>
 
 
-<p>The Backfield is a database management system for American football statkeeping.</p>
+<p>The Backfield is a database management and live broadcasting API for American football statkeeping.</p>
 
 
 <h2 id="technologies">Technologies</h2>
 
-- C#/.Net
+- C#/ASP.Net
 - Entity Framework Core
-- Visual Studio
-- postgres/pgAdmin
+- SignalR
+- postgreSQL
 - Swagger (development only)
 
 <h2>User-Specific Data</h2>
 
-Data in The Backfield is user-specific, to the extent that all calls accessing this data must include the user's session key for access verification. Only users with that session key can access/edit that data. For many calls, the session key is passed as a query parameter. For the remainder, it is included in the request body. 
-Session keys are generated on the creation/login of a user via uid. The uid may be handled by any authentication process integrated into the UI (Google Firebase, etc.) or may be manually specified by the user when creating the data. Once the User is created, the associated uid cannot be altered.
+Data in The Backfield is user-specific, to the extent that most calls accessing this data must include the user's session key for access verification. Only users with that session key can access/edit that data. For many calls, the session key is passed as a query parameter. For many others, it is included in the request body. 
+Session keys are generated on the creation/login of a user via uid. The uid may be handled by any authentication process integrated into the UI (Google Firebase is used in [The Official Backfield UI](http://github.com/alexberka/the-backfield-ui)) or may be manually specified by the user when creating the data. Once the User is created, the associated uid cannot be altered by calls.
 
 <h2 id="started">Getting Started</h2>
 
@@ -32,7 +33,7 @@ Clone this project to a directory on your machine using
 git clone git@github.com:alexberka/the-backfield.git
 ```
 
-Open the solution file in Visual Studio. In order to initialize the database on your machine and populate with seed data, run:
+Open the solution file in an IDE. In order to initialize the database on your machine and populate with seed data, run:
 
 ```
 ef database update
@@ -40,8 +41,7 @@ ef database update
 
 in the terminal.
 
-<h2>Data Structures</h2>
-Data is stored as one of four primary entities:
+<h2>Primary Data Structures</h2>
 
 Teams
 
@@ -98,7 +98,13 @@ Games
 }
 ```
 
-GameStats
+Plays
+
+```
+	Id: <int>
+```
+
+GameStats (Deprecated)
 
 ```
 {
@@ -152,9 +158,15 @@ For complete endpoint documentation, visit [The Backfield Documentation on Postm
 | <kbd>GET /games/{gameId}?sessionKey=\<sessionKey\></kbd>     | retrieve single game with teams and gamestats
 | <kbd>PUT /games/{gameId}</kbd>     | update game
 | <kbd>DELETE /games/{gameId}?sessionKey=\<sessionKey\></kbd>     | delete game
+| <kbd>GET /games/{gameId}/game-stream</kbd>	| retrieve gamestream
 | <kbd>POST /game-stats</kbd>     | create game-stat
-| <kbd>PATCH /game-stats/{gameStatId}</kbd>     | update game-stat
+| <kbd>PUT /game-stats/{gameStatId}</kbd>     | update game-stat
 | <kbd>DELETE /game-stats/{gameStatId}?sessionKey=\<sessionKey\></kbd>     | delete game-stat
+| <kbd>GET /penalties?sessionKey=\<sessionKey\></kbd>	| retrieve penalties (pre-loaded + user-specific)
+| <kbd>GET /plays/{playId}?sessionKey=\<sessionKey\></kbd>	| retrieve single play
+| <kbd>POST /plays</kbd>	| create play
+| <kbd>PUT /plays/{playId}</kbd>	| update play
+| <kbd>DELETE /plays/{playId}?sessionKey=\<sessionKey\></kbd>	| delete play
 | <kbd>GET /players?sessionKey=\<sessionKey\></kbd>     | retrieve user's players
 | <kbd>POST /players</kbd>     | create player
 | <kbd>GET /players/{playerId}?sessionKey=\<sessionKey\></kbd>     | retrieve player with team and positions
@@ -170,10 +182,13 @@ For complete endpoint documentation, visit [The Backfield Documentation on Postm
 | <kbd>DELETE /teams/{teamId}?sessionKey=\<sessionKey\></kbd>     | delete team
 | <kbd>GET /users/{uid}</kbd>     | retrieve user by uid
 | <kbd>POST /users</kbd>     | create user
+|
+| <kbd>WEBSOCKET /watch?gameId=\<gameId\></kbd>	| establish gamestream websocket connection
 
 
 <h3 id="documentation">Further Documentation</h3>
 
-[The Backfield repository on GitHub](github.com/alexberka/the-backfield)
+[The Backfield repository on GitHub](http://github.com/alexberka/the-backfield)
+[The Backfield UI repository on GitHub](http://github.com/alexberka/the-backfield-ui)
 [ERD on dbdiagram](https://dbdiagram.io/d/The-Backfield-6732a4d0e9daa85aca1861f6)
 [Operational Walk-Through on YouTube](https://www.youtube.com/watch?v=bem_ITHckJQ)
