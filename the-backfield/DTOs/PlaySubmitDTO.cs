@@ -53,7 +53,7 @@ namespace TheBackfield.DTOs
         public List<FumbleSubmitDTO> Fumbles { get; set; } = [];
         public int? InterceptedById { get; set; } = null;
         public int? InterceptedAt { get; set; } = null;
-        public bool KickBlocked { get; set; }
+        public bool KickBlocked { get; set; } = false;
         public int? KickBlockedById { get; set; } = null;
         public int? KickBlockRecoveredById { get; set; } = null;
         public int? KickBlockRecoveredAt { get; set; } = null;

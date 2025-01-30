@@ -38,6 +38,11 @@ public class TheBackfieldDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Play>()
+            .HasOne(p => p.Game)
+            .WithMany(g => g.Plays)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<GameStat>()
             .HasOne<Team>()
             .WithMany()
