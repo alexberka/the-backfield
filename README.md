@@ -214,7 +214,7 @@ For complete endpoint documentation, visit [The Backfield Documentation on Postm
 | <kbd>DELETE /teams/{teamId}?sessionKey=\<sessionKey\></kbd>     | delete team
 | <kbd>GET /users/{uid}</kbd>     | retrieve user by uid
 | <kbd>POST /users</kbd>     | create user
-|
+||
 | <kbd>WEBSOCKET /watch?gameId=\<gameId\></kbd>	| establish gamestream websocket connection
 
 <h3 id="documentation">Further Documentation</h3>
