@@ -1,5 +1,5 @@
 <h1 align="center" style="font-weight: bold;">The Backfield</h1>
-<p>v1.025.0124.1b compatible with UI v1.025.0129.1 or later</p>
+<p>v1.025.0130.1b compatible with UI v1.025.0130.1 or later</p>
 
 <p align="center">
 <a href="#tech">Technologies</a>
@@ -101,8 +101,40 @@ Games
 Plays
 
 ```
-	Id: <int>
+	Id: <int>,
+	PrevPlayId: <int>,
+	PrevPlay: <int>,
+	GameId: <int>,
+	Game: <Game>,
+	TeamId: <int>,
+    Team: <Team>,
+    FieldPositionStart: <int>,
+    FieldPositionEnd: <int>,
+    Down: <int>,
+    ToGain: <int>,
+    ClockStart: <int>,
+    ClockEnd: <int>,
+    GamePeriod: <int>,
+    Notes: <string>,
+    Pass: <Pass>,
+    Rush: <Rush>,
+    Tacklers: List<Tackle>,
+    PassDefenders: List<PassDefense>,
+    Kickoff: Kickoff,
+    Punt: <Punt>,
+    FieldGoal: <FieldGoal>,
+    Touchdown: <Touchdown>,
+    ExtraPoint: <ExtraPoint>,
+    Conversion: <Conversion>,
+    Safety: <Safety>,
+    Fumbles: List<Fumble>,
+    Interception: <Interception>,
+    KickBlock: <KickBlock>,
+    Laterals: List<Lateral>,
+    Penalties: List<PlayPenalty>,
 ```
+
+_There are 16 'Play Aux' entities that can only exist when attached to a play. Eleven (Pass, Rush, Kickoff, Punt, FieldGoal, Touchdown, ExtraPoint, Conversion, Safety, Interception, Kickblock) have a one-to-one relationship with Plays. The other five (Tackle, PassDefense, Lateral, Fumble, PlayPenalty) exist in a one-to-many, where a single Play can have multiple of any of them._
 
 GameStats (Deprecated)
 
@@ -130,11 +162,11 @@ GameStats (Deprecated)
 }
 ```
 
-All relationships must established on creation of each entity.
+All relationships must be established on creation of each entity.
 
 <h2>Running the Application</h2>
 
-The application can be started in the terminal is Visual Studio using:
+The application can be started in the terminal in Visual Studio using:
 
 ```
 dotnet run
@@ -185,10 +217,9 @@ For complete endpoint documentation, visit [The Backfield Documentation on Postm
 |
 | <kbd>WEBSOCKET /watch?gameId=\<gameId\></kbd>	| establish gamestream websocket connection
 
-
 <h3 id="documentation">Further Documentation</h3>
 
 [The Backfield repository on GitHub](http://github.com/alexberka/the-backfield)
 [The Backfield UI repository on GitHub](http://github.com/alexberka/the-backfield-ui)
 [ERD on dbdiagram](https://dbdiagram.io/d/The-Backfield-6732a4d0e9daa85aca1861f6)
-[Operational Walk-Through on YouTube](https://www.youtube.com/watch?v=bem_ITHckJQ)
+[UI v1.025.0130.1 Walkthrough](https://youtu.be/BaaFOEkmAuc)
