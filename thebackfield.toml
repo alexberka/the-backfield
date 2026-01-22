@@ -1,8 +1,4 @@
-[build]
-builder = "dockerfile"
-dockerfilePath = "./the-backfield/Dockerfile"
-
-[deploy]
-startCommand = "./the-backfield"
-restartPolicyType = "always"
-healthcheckPath = "/health"
+[services.backend]
+name = "backend"
+dockerfilePath = "./Dockerfile"
+port = 80
