@@ -74,12 +74,19 @@ builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("LocalDev", policy =>
     {
         policy.WithOrigins("http://localhost:3000")
-            .AllowCredentials()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+              .AllowCredentials()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+
+    options.AddPolicy("Production", policy =>
+    {
+        policy.WithOrigins("https://the-backfield.netlify.app")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
 
@@ -90,11 +97,15 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseCors("LocalDev");
+}
+else
+{
+    app.UseCors("Production");
 }
 
 app.UseHealthChecks("/health");
 
-app.UseCors();
 app.UseHttpsRedirection();
 
 app.MapGameEndpoints();
